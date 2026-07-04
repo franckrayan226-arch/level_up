@@ -1,0 +1,7 @@
+{
+  "name": "Monolith Editorial",
+  "description": "A high-end streetwear editorial e-commerce site with a brutalist, monochrome design.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

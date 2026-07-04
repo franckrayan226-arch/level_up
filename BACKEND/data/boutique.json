@@ -1,0 +1,13 @@
+{
+  "produits": [],
+  "categories": [
+    "T-Shirts",
+    "Hoodies",
+    "Pantalons",
+    "Accessoires"
+  ],
+  "parametres": {
+    "nomBoutique": "MONOLITH",
+    "devise": "FCFA"
+  }
+}

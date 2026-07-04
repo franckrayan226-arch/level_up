@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Epilogue:ital,wght@0,100..900;1,100..900&family=Inter:wght@100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary-fixed-dim: #474747;
+  --color-primary-container: #3b3b3b;
+  --color-on-secondary-fixed: #1c1b1b;
+  --color-error-container: #ffdad6;
+  --color-on-tertiary: #e4e2e2;
+  --color-primary: #000000;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-secondary: #5f5e5e;
+  --color-surface-tint: #5e5e5e;
+  --color-on-secondary-container: #1c1b1b;
+  --color-error: #ba1a1a;
+  --color-surface-container-low: #f5f5f5;
+  --color-tertiary-container: #757474;
+  --color-on-primary-container: #ffffff;
+  --color-secondary-container: #d6d4d3;
+  --color-on-secondary-fixed-variant: #3c3b3b;
+  --color-on-primary: #ffffff;
+  --color-on-surface-variant: #474747;
+  --color-surface-container-highest: #e2e2e2;
+  --color-secondary-fixed: #c8c6c5;
+  --color-inverse-surface: #2f3131;
+  --color-on-surface: #000000;
+  --color-on-secondary: #ffffff;
+  --color-inverse-primary: #c6c6c6;
+  --color-on-tertiary-fixed-variant: #e4e2e2;
+  --color-outline-variant: #e5e5e5;
+  --color-surface-container: #fafafa;
+  --color-tertiary: #3b3b3b;
+  --color-tertiary-fixed: #5e5e5e;
+  --color-on-tertiary-fixed: #ffffff;
+  --color-on-error: #ffffff;
+  --color-on-primary-fixed: #ffffff;
+  --color-background: #ffffff;
+  --color-surface-variant: #f5f5f5;
+  --color-primary-fixed: #5e5e5e;
+  --color-surface-container-high: #f0f0f0;
+  --color-on-background: #000000;
+  --color-surface: #ffffff;
+  --color-on-tertiary-container: #ffffff;
+  --color-inverse-on-surface: #f1f1f1;
+  --color-on-primary-fixed-variant: #e2e2e2;
+  --color-surface-dim: #e5e5e5;
+  --color-outline: #e5e5e5;
+  --color-on-error-container: #410002;
+  --color-secondary-fixed-dim: #adabaa;
+  --color-tertiary-fixed-dim: #464747;
+
+  --font-headline: 'Epilogue', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-label: 'Inter', sans-serif;
+  --font-logo: 'Bodoni Moda', serif;
+
+  --radius: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-full: 0px;
+}
+
+@utility hide-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  min-height: max(884px, 100dvh);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Epilogue', sans-serif;
+}
