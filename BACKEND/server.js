@@ -55,7 +55,7 @@ async function saveData(data) {
 }
 
 // ─── AUTH ───
-const MOT_DE_PASSE_ADMIN = process.env.MOT_DE_PASSE_ADMIN || 'test1234';
+const ADMIN_PASSWORD = process.env.MOT_DE_PASSE_ADMIN || 'test1234';
 
 function checkAuth(req, res, next) {
   const auth = req.headers['x-admin-password'] || req.query.key;
