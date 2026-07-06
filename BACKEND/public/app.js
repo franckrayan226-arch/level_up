@@ -3,9 +3,10 @@
 // ============================================
 
 // Détecte automatiquement l'URL de l'API
-const API_BASE = window.location.origin.includes('localhost') 
-  ? 'http://localhost:3001' 
-  : '';
+// Si on est sur le même domaine que le backend (ex: /admin/ servi par le backend)
+// on utilise des URLs relatives. Sinon on pointe vers localhost.
+const API_BASE = '';  // URLs relatives = même serveur, même port
+  
 
 let currentProduits = [];
 let deleteTargetId = null;

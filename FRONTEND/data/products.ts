@@ -15,7 +15,7 @@ export interface Product {
 }
 
 // ============================================
-// DONNÉES DE FALLBACK (4 produits minimum)
+// DONNÉES DE FALLBACK (affichage immédiat)
 // ============================================
 const fallbackProducts: Product[] = [
   {
@@ -28,7 +28,7 @@ const fallbackProducts: Product[] = [
       { name: 'GREY', hex: '#808080' },
       { name: 'WHITE', hex: '#F3F3F3' }
     ],
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDdf0KWVSbRiMPrD3xgC6-v8HdZfvGMoeThRnUH0-bxDrDuMft0yKsNMeH80zXEoIhdnDZDTtg9o_bmyvPqZGRyFCJQIZ9ZlR9vbB7K16z0WwOheDTFAOqEnEXQFY9sim78-MpODTdgZ2JVuOFoEp0JsK4eLg9JydOoE7IQKAH7-WFW3HXh447gqD-WkycMnV3Vr5UA2E2j6g3IyejVogWvV6JQLp9Ncjin1W31LNd0vrMlQOswV0u-L2CshAyVOEWClP5GaJMGbtrm',
+    image: '/hero-image.png',
     description: 'Minimalist heavy cotton black oversized t-shirt.'
   },
   {
@@ -74,7 +74,7 @@ const fallbackProducts: Product[] = [
 let cachedProducts: Product[] | null = null;
 
 // ============================================
-// EXPORT POUR L'ANCIEN CODE SYNCHRONE
+// EXPORT SYNCHRONE (pour l'ancien code)
 // ============================================
 export const products = fallbackProducts;
 

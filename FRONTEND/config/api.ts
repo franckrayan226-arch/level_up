@@ -1,4 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// En dev : localhost:8080, en prod : même domaine (URL relative)
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:8080/api' 
+  : '/api';
 
 export async function fetchProduits() {
   const res = await fetch(`${API_BASE}/produits`);

@@ -1,17 +1,3 @@
-import express from 'express';
-import cors from 'cors';
-
-const app = express();
-
-// Configuration du CORS
-app.use(cors({
-  origin: 'https://votre-frontend-sur-railway.up.railway.app', // Remplacez par l'URL réelle de votre frontend déployé
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
-
-app.use(express.json());
-// ... reste de votre code
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -22,16 +8,24 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ─── MIDDLEWARE ───
-app.use(cors());
+// ─── CORS (autorise tout en dev, configurable en prod) ───
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+app.use(cors({
+  origin: CORS_ORIGIN,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── STATIC FILES ───
+// ─── FICHIERS STATIQUES ───
+// Le dashboard admin
 app.use('/admin', express.static(path.join(__dirname, 'public')));
+// Les images uploadées
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ─── MULTER CONFIG ───
+// ─── MULTER (upload images) ───
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const dir = path.join(__dirname, 'uploads');
@@ -45,7 +39,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// ─── DATA JSON ───
+// ─── DONNÉES JSON ───
 const DATA_PATH = path.join(__dirname, 'data', 'boutique.json');
 
 async function loadData() {
@@ -188,7 +182,7 @@ app.patch('/api/admin/produits/:id/disponible', checkAuth, async (req, res) => {
 // ─── REDIRECT /admin → /admin/ ───
 app.get('/admin', (req, res) => res.redirect('/admin/'));
 
-// ─── SERVE INDEX.HTML ───
+// ─── SERVE INDEX.HTML DU DASHBOARD ───
 app.get('/admin/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -197,9 +191,11 @@ app.get('/admin/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
+// Servir le frontend vitrine depuis le dossier FRONTEND (au même niveau que BACKEND)
+app.use('/', express.static(path.join(__dirname, '..', 'FRONTEND')));
 // ─── START ───
 app.listen(PORT, () => {
-  console.log(`Serveur sur http://localhost:${PORT}`);
-  console.log(`Admin: http://localhost:${PORT}/admin/`);
+  console.log(` Backend + Dashboard sur http://localhost:${PORT}`);
+  console.log(`  Dashboard: http://localhost:${PORT}/admin/`);
+  console.log(` Mot de passe admin: ${ADMIN_PASSWORD === 'test1234' ? 'test1234 (changez-le !)' : '****'}`);
 });
