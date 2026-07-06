@@ -1,3 +1,17 @@
+import express from 'express';
+import cors from 'cors';
+
+const app = express();
+
+// Configuration du CORS
+app.use(cors({
+  origin: 'https://votre-frontend-sur-railway.up.railway.app', // Remplacez par l'URL réelle de votre frontend déployé
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
+app.use(express.json());
+// ... reste de votre code
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
