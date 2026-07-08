@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchProducts, type ApiProduct } from '../api';
 import { fetchProducts, getImageUrl, type ApiProduct } from '../api';
+
 export default function Home() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,12 +56,7 @@ export default function Home() {
             {displayProducts[0] && (
               <Link to={`/product/${displayProducts[0].id}`} className="col-span-2 md:col-span-8 group block">
                 <div className="aspect-[4/5] md:aspect-[16/9] bg-white mb-4 md:mb-6 relative overflow-hidden">
-                <img 
-                     src={getImageUrl(product.image)} 
-                     alt={product.nom}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
-                     referrerPolicy="no-referrer"
-                     /> 
+                  <img src={getImageUrl(displayProducts[0].image)} alt={displayProducts[0].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
                   <div className="absolute top-4 left-4 md:top-6 md:left-6 bg-black text-white px-3 py-1 md:px-4 md:py-2 text-[10px] md:text-xs font-bold tracking-widest uppercase font-headline">01</div>
                 </div>
                 <div className="flex flex-col xl:flex-row justify-between items-start pt-2 md:w-3/4 gap-1 xl:gap-4">
@@ -81,7 +76,7 @@ export default function Home() {
             {displayProducts[1] && (
               <Link to={`/product/${displayProducts[1].id}`} className="col-span-1 md:col-span-4 group block mt-6 md:mt-32">
                 <div className="aspect-[3/4] bg-white mb-3 md:mb-6 relative overflow-hidden">
-                  <img src={displayProducts[1].image || '/placeholder.png'} alt={displayProducts[1].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+                  <img src={getImageUrl(displayProducts[1].image)} alt={displayProducts[1].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
                   <div className="absolute top-3 left-3 md:top-4 md:left-4 bg-black text-white px-2 py-1 md:px-3 md:py-1 text-[8px] md:text-[10px] font-bold tracking-widest uppercase font-headline">02</div>
                 </div>
                 <div className="flex flex-col xl:flex-row justify-between items-start pt-2 gap-1 xl:gap-4">
@@ -101,7 +96,7 @@ export default function Home() {
             {displayProducts[2] && (
               <Link to={`/product/${displayProducts[2].id}`} className="col-span-1 md:col-span-5 group block">
                 <div className="aspect-[3/4] bg-white mb-3 md:mb-6 relative overflow-hidden">
-                  <img src={displayProducts[2].image || '/placeholder.png'} alt={displayProducts[2].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+                  <img src={getImageUrl(displayProducts[2].image)} alt={displayProducts[2].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
                   <div className="absolute top-3 left-3 md:top-4 md:left-4 bg-black text-white px-2 py-1 md:px-3 md:py-1 text-[8px] md:text-[10px] font-bold tracking-widest uppercase font-headline">03</div>
                 </div>
                 <div className="flex flex-col xl:flex-row justify-between items-start pt-2 gap-1 xl:gap-4">
@@ -121,7 +116,7 @@ export default function Home() {
             {displayProducts[3] && (
               <Link to={`/product/${displayProducts[3].id}`} className="col-span-2 md:col-span-7 group block mt-2 md:mt-[-100px]">
                 <div className="aspect-square md:aspect-[4/5] bg-white mb-4 md:mb-6 relative overflow-hidden">
-                  <img src={displayProducts[3].image || '/placeholder.png'} alt={displayProducts[3].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+                  <img src={getImageUrl(displayProducts[3].image)} alt={displayProducts[3].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
                   <div className="absolute top-4 left-4 md:top-6 md:left-6 bg-black text-white px-3 py-1 md:px-4 md:py-2 text-[10px] md:text-xs font-bold tracking-widest uppercase font-headline">04</div>
                 </div>
                 <div className="flex flex-col xl:flex-row justify-between items-start pt-2 md:w-3/4 md:ml-auto gap-1 xl:gap-4">
