@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MapPin, Loader2, CreditCard, UploadCloud, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { MapPin, Loader2, CreditCard, UploadCloud, Trash2, ArrowRight, ShoppingBag, Smartphone } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { getImageUrl } from '../api';
@@ -8,25 +8,41 @@ type PaymentMethod = 'orange' | 'moov' | 'wave';
 
 interface PaymentInfo {
   method: PaymentMethod;
-  number: string;
-  instructions: string;
+  name: string;
+  ussdCode: string;
+  deepLink: string;
+  color: string;
+  borderColor: string;
+  bgColor: string;
 }
 
 const PAYMENT_METHODS: Record<PaymentMethod, PaymentInfo> = {
   orange: {
     method: 'orange',
-    number: '+22607636257',
-    instructions: 'Transférez le montant via Orange Money au numéro ci-dessus. Prenez une capture d\'écran du reçu.'
+    name: 'Orange Money',
+    ussdCode: '*144#',
+    deepLink: 'tel:*144#',
+    color: '#FF7900',
+    borderColor: 'border-[#FF7900]',
+    bgColor: 'bg-[#FF7900]/5'
   },
   moov: {
     method: 'moov',
-    number: '+22663293139',
-    instructions: 'Transférez le montant via Moov Money au numéro ci-dessus. Prenez une capture d\'écran du reçu.'
+    name: 'Moov Money',
+    ussdCode: '*155#',
+    deepLink: 'tel:*155#',
+    color: '#0055A5',
+    borderColor: 'border-[#0055A5]',
+    bgColor: 'bg-[#0055A5]/5'
   },
   wave: {
     method: 'wave',
-    number: '+22663293139',
-    instructions: 'Transférez le montant via Wave au numéro ci-dessus. Prenez une capture d\'écran du reçu.'
+    name: 'Wave',
+    ussdCode: '',
+    deepLink: 'https://wave.com/send',
+    color: '#1CBBFF',
+    borderColor: 'border-[#1CBBFF]',
+    bgColor: 'bg-[#1CBBFF]/5'
   }
 };
 
@@ -37,7 +53,6 @@ export default function CheckoutWhatsApp() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [useGPS, setUseGPS] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [coordinates, setCoordinates] = useState<{lat: number, lon: number} | null>(null);
@@ -46,7 +61,11 @@ export default function CheckoutWhatsApp() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('orange');
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Récupérer la position GPS
   const getLocation = () => {
@@ -57,7 +76,6 @@ export default function CheckoutWhatsApp() {
 
     setIsLocating(true);
     setLocationError('');
-    setUseGPS(true);
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -65,7 +83,6 @@ export default function CheckoutWhatsApp() {
           const { latitude, longitude } = position.coords;
           setCoordinates({ lat: latitude, lon: longitude });
           
-          // Essayer de récupérer l'adresse via OpenStreetMap
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           if (!response.ok) throw new Error('Failed');
           const data = await response.json();
@@ -79,24 +96,66 @@ export default function CheckoutWhatsApp() {
       (error) => {
         setLocationError(`Erreur: ${error.message}`);
         setIsLocating(false);
-        setUseGPS(false);
       }
     );
   };
 
-  // Upload screenshot
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setScreenshot(URL.createObjectURL(file));
-      setScreenshotFile(file);
+  // Lancer le paiement automatique
+  const initiatePayment = () => {
+    const method = PAYMENT_METHODS[paymentMethod];
+    
+    if (paymentMethod === 'wave') {
+      // Wave n'a pas de code USSD standard, on ouvre l'app ou le site
+      window.open(`https://wave.com/send?amount=${cartTotal}&phone=22663293139`, '_blank');
+    } else {
+      // Orange et Moov via USSD
+      const ussdCode = method.ussdCode;
+      window.location.href = `tel:${ussdCode}`;
     }
+    
+    setPaymentInitiated(true);
+  };
+
+  // Upload screenshot vers le backend
+  const uploadScreenshot = async (file: File): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append('screenshot', file);
+    
+    try {
+      const res = await fetch('/api/upload-payment', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      return data.url;
+    } catch (err) {
+      console.error('Upload error:', err);
+      return null;
+    }
+  };
+
+  // Gérer le fichier sélectionné
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setScreenshot(URL.createObjectURL(file));
+    setScreenshotFile(file);
+    setIsUploading(true);
+
+    const url = await uploadScreenshot(file);
+    if (url) {
+      setUploadedImageUrl(url);
+    }
+    setIsUploading(false);
   };
 
   const removeFile = () => {
     if (screenshot) URL.revokeObjectURL(screenshot);
     setScreenshot(null);
     setScreenshotFile(null);
+    setUploadedImageUrl(null);
   };
 
   // Envoyer la commande WhatsApp
@@ -106,12 +165,22 @@ export default function CheckoutWhatsApp() {
       return;
     }
 
+    if (!screenshotFile) {
+      alert('Veuillez joindre une preuve de paiement');
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Construire le message
-    const paymentInfo = PAYMENT_METHODS[paymentMethod];
+    let imageUrl = uploadedImageUrl;
+    if (!imageUrl && screenshotFile) {
+      imageUrl = await uploadScreenshot(screenshotFile);
+      if (imageUrl) setUploadedImageUrl(imageUrl);
+    }
+
+    const method = PAYMENT_METHODS[paymentMethod];
     
-    let message = ` *NOUVELLE COMMANDE - MONOLITH*\n\n`;
+    let message = `🛒 *NOUVELLE COMMANDE - MONOLITH*\n\n`;
     message += `*Client:* ${fullName}\n`;
     message += `*Téléphone:* ${phone}\n`;
     message += `*Adresse:* ${address}\n`;
@@ -125,25 +194,16 @@ export default function CheckoutWhatsApp() {
     });
     
     message += `\n*Total:* ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
-    message += `*Paiement:* ${paymentMethod.toUpperCase()}\n`;
+    message += `*Paiement:* ${method.name}\n`;
     
-    if (screenshotFile) {
-      message += `\n Preuve de paiement jointe (capture d'écran)`;
-    } else {
-      message += `\n En attente de la preuve de paiement`;
+    if (imageUrl) {
+      message += `\n📎 *Preuve de paiement:* ${window.location.origin}${imageUrl}`;
     }
 
-    // Encoder le message pour WhatsApp
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/22663293139?text=${encodedMessage}`;
     
-    // Ouvrir WhatsApp dans un nouvel onglet
     window.open(whatsappUrl, '_blank');
-
-    // Si il y a une capture d'écran, on pourrait l'uploader vers un service cloud
-    // et ajouter le lien dans le message, mais pour l'instant on ouvre WhatsApp
-    // et le client envoie la capture manuellement dans la conversation
-
     setIsSubmitting(false);
   };
 
@@ -158,6 +218,8 @@ export default function CheckoutWhatsApp() {
       </div>
     );
   }
+
+  const currentMethod = PAYMENT_METHODS[paymentMethod];
 
   return (
     <div className="pt-28 pb-32 px-6 max-w-5xl mx-auto">
@@ -175,7 +237,6 @@ export default function CheckoutWhatsApp() {
             </h2>
             
             <div className="space-y-8">
-              {/* Nom */}
               <div>
                 <label className="block text-[10px] font-bold tracking-widest uppercase text-zinc-500 mb-2 font-body">Nom complet *</label>
                 <input 
@@ -188,20 +249,18 @@ export default function CheckoutWhatsApp() {
                 />
               </div>
 
-              {/* Téléphone */}
               <div>
                 <label className="block text-[10px] font-bold tracking-widest uppercase text-zinc-500 mb-2 font-body">Téléphone *</label>
                 <input 
                   type="tel" 
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+226 XX XX XX XX"
+                  placeholder="+22663 29 31 39"
                   className="w-full bg-transparent border-0 border-b border-zinc-200 focus:border-primary focus:ring-0 p-0 pb-2 text-sm placeholder:text-zinc-300 font-medium font-body"
                   required
                 />
               </div>
 
-              {/* Adresse + GPS */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-[10px] font-bold tracking-widest uppercase text-zinc-500 font-body">Adresse de livraison *</label>
@@ -247,53 +306,78 @@ export default function CheckoutWhatsApp() {
               <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('orange')}
+                  onClick={() => { setPaymentMethod('orange'); setPaymentInitiated(false); }}
                   className={`border p-4 flex flex-col items-center justify-center gap-2 transition-all duration-300 ${paymentMethod === 'orange' ? 'border-[#FF7900] bg-[#FF7900]/5' : 'border-zinc-200 hover:border-[#FF7900]/50'}`}
                 >
                   <span className="text-[10px] font-bold tracking-widest uppercase font-body text-center text-[#FF7900]">Orange Money</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('moov')}
+                  onClick={() => { setPaymentMethod('moov'); setPaymentInitiated(false); }}
                   className={`border p-4 flex flex-col items-center justify-center gap-2 transition-all duration-300 ${paymentMethod === 'moov' ? 'border-[#0055A5] bg-[#0055A5]/5' : 'border-zinc-200 hover:border-[#0055A5]/50'}`}
                 >
                   <span className="text-[10px] font-bold tracking-widest uppercase font-body text-center text-[#0055A5]">Moov Money</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('wave')}
+                  onClick={() => { setPaymentMethod('wave'); setPaymentInitiated(false); }}
                   className={`border p-4 flex flex-col items-center justify-center gap-2 transition-all duration-300 ${paymentMethod === 'wave' ? 'border-[#1CBBFF] bg-[#1CBBFF]/5' : 'border-zinc-200 hover:border-[#1CBBFF]/50'}`}
                 >
                   <span className="text-[10px] font-bold tracking-widest uppercase font-body text-center text-[#1CBBFF]">Wave</span>
                 </button>
               </div>
 
-              {/* Instructions */}
+              {/* Instructions + bouton paiement auto */}
               <div className="bg-zinc-50 border border-zinc-200 p-6 space-y-4">
                 <div>
-                  <h3 className="text-sm font-bold tracking-tight uppercase mb-2 font-headline">1. Effectuez le transfert</h3>
-                  <p className="text-xs text-zinc-500 font-body">
-                    Envoyez <strong className="text-primary">{cartTotal.toLocaleString('fr-FR')} FCFA</strong> au numéro :
+                  <h3 className="text-sm font-bold tracking-tight uppercase mb-2 font-headline">1. Effectuez le paiement</h3>
+                  <p className="text-xs text-zinc-500 font-body mb-4">
+                    Montant à payer: <strong className="text-primary" style={{ color: currentMethod.color }}>{cartTotal.toLocaleString('fr-FR')} FCFA</strong>
                   </p>
-                  <div className="mt-3 text-lg font-black tracking-tighter bg-white p-4 text-center border border-zinc-200">
-                    {PAYMENT_METHODS[paymentMethod].number}
-                  </div>
+                  
+                  {/* Bouton lancer paiement */}
+                  <button
+                    onClick={initiatePayment}
+                    className="w-full py-4 px-6 font-bold tracking-widest uppercase flex items-center justify-center gap-3 transition-all duration-300 hover:opacity-90 text-white"
+                    style={{ backgroundColor: currentMethod.color }}
+                  >
+                    <Smartphone className="w-5 h-5" />
+                    <span>
+                      {paymentMethod === 'wave' ? 'OUVRIR WAVE' : `COMPOSER ${currentMethod.ussdCode}`}
+                    </span>
+                  </button>
+                  
+                  {paymentInitiated && (
+                    <p className="text-[10px] text-green-600 mt-2 font-body text-center">
+                       Paiement lancé sur votre téléphone
+                    </p>
+                  )}
+                  
+                  <p className="text-[10px] text-zinc-400 mt-3 font-body text-center">
+                    {paymentMethod === 'wave' 
+                      ? 'Vous serez redirigé vers Wave pour compléter le paiement' 
+                      : 'Le code USSD va s\'ouvrir sur votre téléphone. Suivez les instructions.'}
+                  </p>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-bold tracking-tight uppercase mb-4 font-headline">2. Preuve de paiement</h3>
+                  <h3 className="text-sm font-bold tracking-tight uppercase mb-4 font-headline">2. Preuve de paiement *</h3>
                   
                   {!screenshot ? (
-                    <div className="relative border-2 border-dashed border-zinc-300 hover:border-primary/60 transition-colors bg-white p-6 flex flex-col items-center justify-center text-center cursor-pointer group">
+                    <div 
+                      className="relative border-2 border-dashed border-zinc-300 hover:border-primary/60 transition-colors bg-white p-6 flex flex-col items-center justify-center text-center cursor-pointer group"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
                       <input 
+                        ref={fileInputRef}
                         type="file" 
                         accept="image/*"
                         onChange={handleFileUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        className="hidden"
                       />
                       <UploadCloud className="w-8 h-8 text-zinc-400 group-hover:text-primary transition-colors mb-2" />
                       <p className="text-xs font-bold uppercase tracking-widest font-headline">Cliquez pour importer</p>
-                      <p className="text-[10px] text-zinc-400 font-body mt-1">PNG, JPG ou JPEG</p>
+                      <p className="text-[10px] text-zinc-400 font-body mt-1">Capture d'écran du reçu</p>
                     </div>
                   ) : (
                     <div className="relative border border-primary/30 bg-white p-2 flex items-center justify-between">
@@ -301,7 +385,11 @@ export default function CheckoutWhatsApp() {
                         <div className="w-10 h-10 bg-zinc-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
                           <img src={screenshot} alt="Reçu" className="w-full h-full object-cover" />
                         </div>
-                        <span className="text-xs font-medium font-body truncate">Capture d'écran</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium font-body truncate">Capture d'écran</span>
+                          {isUploading && <span className="text-[10px] text-primary">Upload en cours...</span>}
+                          {uploadedImageUrl && <span className="text-[10px] text-green-600"> Uploadé</span>}
+                        </div>
                       </div>
                       <button 
                         type="button" 
@@ -320,7 +408,7 @@ export default function CheckoutWhatsApp() {
           {/* Bouton commander */}
           <button 
             onClick={sendOrder}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploading || !uploadedImageUrl}
             className="w-full bg-primary text-white py-6 px-10 font-bold tracking-widest uppercase flex justify-between items-center group transition-all duration-300 hover:bg-black font-headline disabled:opacity-50"
           >
             <span>{isSubmitting ? 'Envoi...' : 'COMMANDER PAR WHATSAPP'}</span>
