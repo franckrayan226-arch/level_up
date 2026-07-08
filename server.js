@@ -189,7 +189,13 @@ app.get('/api/health', (req, res) => {
 });
 
 // ═══════════════════════════════════════════
-// UPLOADS STATIQUES
+// UPLOADS STATIQUES (AVANT les autres routes)
+// ═══════════════════════════════════════════
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ═══════════════════════════════════════════
+// DASHBOARD ADMIN
 // ═══════════════════════════════════════════
 
 app.use('/admin', express.static(path.join(__dirname, 'BACKEND', 'public')));
@@ -208,7 +214,6 @@ app.get('/admin/', (req, res) => {
 
 app.use(express.static(path.join(__dirname, 'FRONTEND', 'dist')));
 
-// Catch-all pour le frontend SPA (UNIQUEMENT si ce n'est pas /api, /uploads, /admin)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'FRONTEND', 'dist', 'index.html'));
 });
