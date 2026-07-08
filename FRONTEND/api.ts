@@ -14,6 +14,13 @@ export interface ApiProduct {
   dateAjout: string;
 }
 
+// Fonction utilitaire pour les URLs d'images
+export function getImageUrl(imagePath: string | null): string {
+  if (!imagePath) return '/placeholder.png';
+  if (imagePath.startsWith('http')) return imagePath;
+  return `${API_BASE}${imagePath}`;
+}
+
 export async function fetchProducts(): Promise<ApiProduct[]> {
   const res = await fetch(`${API_BASE}/api/produits`);
   if (!res.ok) throw new Error('Erreur chargement produits');

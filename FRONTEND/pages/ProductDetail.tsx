@@ -4,6 +4,7 @@ import { ArrowRight, Zap } from 'lucide-react';
 import { fetchProduct, type ApiProduct } from '../api';
 import { useCart } from '../context/CartContext';
 import { BrandLogo } from '../components/BrandLogo';
+import { getImageUrl } from '../api';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -72,12 +73,11 @@ export default function ProductDetail() {
         {/* Image */}
         <div className="lg:col-span-7 bg-white relative aspect-[3/4] md:aspect-auto md:h-[calc(100vh-80px)] overflow-hidden">
           <img 
-            src={product.image || '/placeholder.png'} 
-            alt={product.nom} 
-            className="w-full h-full object-contain"
+           src={getImageUrl(product.image)} 
+            alt={product.nom}
+           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
             referrerPolicy="no-referrer"
-          />
-        </div>
+          /></div>
 
         {/* Details */}
         <div className="lg:col-span-5 px-6 py-12 lg:px-16 lg:py-20 flex flex-col justify-between">

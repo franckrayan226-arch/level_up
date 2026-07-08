@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProducts, type ApiProduct } from '../api';
-
+import { fetchProducts, getImageUrl, type ApiProduct } from '../api';
 export default function Shop() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,12 +47,14 @@ export default function Shop() {
         {products.map((product) => (
           <Link to={`/product/${product.id}`} key={product.id} className="flex flex-col gap-4 group">
             <div className="aspect-[3/4] bg-white overflow-hidden">
+              
               <img 
-                src={product.image || '/placeholder.png'} 
-                alt={product.nom} 
-                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
-                referrerPolicy="no-referrer"
-              />
+             src={getImageUrl(product.image)} 
+             alt={product.nom}
+             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
+             referrerPolicy="no-referrer"
+             />
+              
             </div>
             <div className="flex flex-col gap-1">
               <h3 className="font-headline font-bold text-base leading-tight uppercase tracking-tight">{product.nom}</h3>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProducts, type ApiProduct } from '../api';
-
+import { fetchProducts, getImageUrl, type ApiProduct } from '../api';
 export default function Home() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,12 @@ export default function Home() {
             {displayProducts[0] && (
               <Link to={`/product/${displayProducts[0].id}`} className="col-span-2 md:col-span-8 group block">
                 <div className="aspect-[4/5] md:aspect-[16/9] bg-white mb-4 md:mb-6 relative overflow-hidden">
-                  <img src={displayProducts[0].image || '/placeholder.png'} alt={displayProducts[0].nom} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700" referrerPolicy="no-referrer" />
+                <img 
+                     src={getImageUrl(product.image)} 
+                     alt={product.nom}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
+                     referrerPolicy="no-referrer"
+                     /> 
                   <div className="absolute top-4 left-4 md:top-6 md:left-6 bg-black text-white px-3 py-1 md:px-4 md:py-2 text-[10px] md:text-xs font-bold tracking-widest uppercase font-headline">01</div>
                 </div>
                 <div className="flex flex-col xl:flex-row justify-between items-start pt-2 md:w-3/4 gap-1 xl:gap-4">
