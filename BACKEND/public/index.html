@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+# 2. index.html corrigé (navigation sans href="#")
+index_html = r'''<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -31,11 +32,11 @@
         <span class="dash-brand-sub">CONTROL PANEL</span>
       </div>
       <nav class="dash-nav">
-        <a href="#overview" class="nav-link active" onclick="showSection('overview')">OVERVIEW</a>
-        <a href="#produits" class="nav-link" onclick="showSection('produits')">PRODUITS</a>
-        <a href="#ajouter" class="nav-link" onclick="showSection('ajouter')">AJOUTER</a>
-        <a href="http://localhost:3000" target="_blank" class="nav-link nav-external">VOIR LE SITE</a>
-        <button class="nav-link nav-logout" onclick="logout()">QUITTER</button>
+        <button type="button" class="nav-link active" data-section="overview" onclick="showSection('overview')">OVERVIEW</button>
+        <button type="button" class="nav-link" data-section="produits" onclick="showSection('produits')">PRODUITS</button>
+        <button type="button" class="nav-link" data-section="ajouter" onclick="showSection('ajouter')">AJOUTER</button>
+        <a href="/" target="_blank" class="nav-link nav-external">VOIR LE SITE</a>
+        <button type="button" class="nav-link nav-logout" onclick="logout()">QUITTER</button>
       </nav>
     </header>
 
@@ -45,7 +46,7 @@
         <h1 class="section-title">OVERVIEW</h1>
         <div class="section-line"></div>
       </div>
-
+      
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-number" id="stat-total">0</div>
@@ -77,7 +78,7 @@
         <h1 class="section-title">TOUS LES PRODUITS</h1>
         <div class="section-line"></div>
       </div>
-
+      
       <div class="filters-bar">
         <input type="text" id="search-input" placeholder="Rechercher..." onkeyup="filterProduits()">
         <select id="filter-categorie" onchange="filterProduits()">
@@ -114,38 +115,38 @@
         <h1 class="section-title" id="form-title">NOUVEAU PRODUIT</h1>
         <div class="section-line"></div>
       </div>
-
+      
       <form id="produit-form" class="produit-form" onsubmit="submitProduit(event)">
         <input type="hidden" id="edit-id">
-
+        
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">NOM DU PRODUIT *</label>
             <input type="text" id="form-nom" required class="form-input" placeholder="Ex: OVERSIZED HOODIE">
           </div>
-
+          
           <div class="form-group">
             <label class="form-label">PRIX (FCFA) *</label>
             <input type="number" id="form-prix" required class="form-input" placeholder="25000">
           </div>
-
+          
           <div class="form-group">
             <label class="form-label">CATEGORIE</label>
             <select id="form-categorie" class="form-input form-select">
               <option value="">Selectionner...</option>
             </select>
           </div>
-
+          
           <div class="form-group">
             <label class="form-label">PROMOTION %</label>
             <input type="number" id="form-promotion" min="0" max="100" value="0" class="form-input">
           </div>
-
+          
           <div class="form-group">
             <label class="form-label">STOCK</label>
             <input type="number" id="form-stock" min="0" value="0" class="form-input">
           </div>
-
+          
           <div class="form-group form-group-check">
             <label class="form-check">
               <input type="checkbox" id="form-disponible" checked>
@@ -154,7 +155,7 @@
             </label>
           </div>
         </div>
-
+        
         <div class="form-group form-group-full">
           <label class="form-label">DESCRIPTION</label>
           <textarea id="form-description" rows="3" class="form-input form-textarea" placeholder="Description du produit..."></textarea>
@@ -184,7 +185,7 @@
           <div id="colors-container"></div>
           <button type="button" class="btn-add-color" onclick="addColorBlock()">+ AJOUTER UNE COULEUR</button>
         </div>
-
+        
         <div class="form-group form-group-full" style="margin-top:24px">
           <label class="form-label">IMAGE PRINCIPALE</label>
           <div class="image-upload" id="image-upload-zone">
@@ -204,7 +205,7 @@
           <div style="font-size:11px; font-weight:600; letter-spacing:2px; color:var(--text-muted); margin-bottom:8px;">LIVRAISON</div>
           <div style="font-size:13px; color:var(--text);">+1000 FCFA de frais de livraison seront automatiquement ajoutes a chaque commande.</div>
         </div>
-
+        
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" onclick="resetForm()">ANNULER</button>
           <button type="submit" class="btn btn-primary" id="btn-submit">ENREGISTRER</button>
@@ -232,3 +233,7 @@
   <script src="app.js"></script>
 </body>
 </html>
+
+
+
+

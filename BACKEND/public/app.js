@@ -65,7 +65,7 @@ function showSection(section) {
 
   document.getElementById(`section-${section}`).classList.remove('hidden');
 
-  const link = document.querySelector(`a[href="#${section}"]`);
+  const link = document.querySelector(`.nav-link[data-section="${section}"]`);
   if (link) link.classList.add('active');
 
   if (section === 'overview') loadStats();
@@ -526,7 +526,7 @@ function editProduit(p) {
 
   showSection('ajouter');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.querySelector('a[href="#ajouter"]').classList.add('active');
+  document.querySelector('.nav-link[data-section="ajouter"]').classList.add('active');
 }
 
 function resetForm() {
@@ -647,7 +647,7 @@ async function submitProduit(e) {
     loadStats();
     showSection('overview');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    document.querySelector('a[href="#overview"]').classList.add('active');
+    document.querySelector('.nav-link[data-section="overview"]').classList.add('active');
 
   } catch (err) {
     toast(err.message, 'error');

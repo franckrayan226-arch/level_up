@@ -1,4 +1,4 @@
-const express = require('express');
+
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
@@ -22,8 +22,6 @@ app.use(express.urlencoded({ extended: true }));
 // ═══════════════════════════════════════════
 // MULTER — UPLOADS
 // ═══════════════════════════════════════════
-
-// Storage général
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const dir = path.join(__dirname, 'uploads');
@@ -37,7 +35,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Storage couleurs (sous-dossier)
 const colorStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const dir = path.join(__dirname, 'uploads', 'couleurs');
@@ -51,7 +48,6 @@ const colorStorage = multer.diskStorage({
 });
 const colorUpload = multer({ storage: colorStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Storage paiements
 const paymentStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const dir = path.join(__dirname, 'uploads', 'payments');
@@ -124,7 +120,12 @@ function parseTailles(body) {
 }
 
 // ═══════════════════════════════════════════
-// API PUBLIQUE
+// FICHIERS STATIQUES (UPLOADS D'ABORD)
+// ═══════════════════════════════════════════
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ═══════════════════════════════════════════
+// API PUBLIQUE (AVANT le catch-all !)
 // ═══════════════════════════════════════════
 
 app.get('/api/produits', async (req, res) => {
@@ -164,7 +165,6 @@ app.get('/api/admin/produits', checkAuth, async (req, res) => {
   res.json(data.produits);
 });
 
-// POST — Créer un produit (avec image principale + images de couleurs)
 app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, res) => {
   const data = await loadData();
   const couleurs = parseCouleurs(req.body);
@@ -174,7 +174,7 @@ app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, r
     id: uuidv4().slice(0, 8),
     nom: req.body.nom || '',
     prix: parseFloat(req.body.prix) || 0,
-    livraison: 1000, // ← FRAIS FIXES
+    livraison: 1000,
     description: req.body.description || '',
     categorie: req.body.categorie || '',
     promotion: parseFloat(req.body.promotion) || 0,
@@ -191,7 +191,6 @@ app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, r
   res.json({ success: true, produit });
 });
 
-// PUT — Modifier un produit
 app.put('/api/admin/produits/:id', checkAuth, upload.single('image'), async (req, res) => {
   const data = await loadData();
   const idx = data.produits.findIndex(p => p.id === req.params.id);
@@ -226,20 +225,15 @@ app.put('/api/admin/produits/:id', checkAuth, upload.single('image'), async (req
   res.json({ success: true, produit: data.produits[idx] });
 });
 
-// DELETE — Supprimer un produit
 app.delete('/api/admin/produits/:id', checkAuth, async (req, res) => {
   const data = await loadData();
   const idx = data.produits.findIndex(p => p.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Produit non trouve' });
 
   const produit = data.produits[idx];
-
-  // Supprime image principale
   if (produit.image) {
     try { await fs.unlink(path.join(__dirname, produit.image.replace('/uploads/', 'uploads/'))); } catch {}
   }
-
-  // Supprime images des couleurs
   if (produit.couleurs) {
     for (const c of produit.couleurs) {
       if (c.images) {
@@ -255,7 +249,6 @@ app.delete('/api/admin/produits/:id', checkAuth, async (req, res) => {
   res.json({ success: true });
 });
 
-// PATCH — Toggle disponible
 app.patch('/api/admin/produits/:id/disponible', checkAuth, async (req, res) => {
   const data = await loadData();
   const p = data.produits.find(p => p.id === req.params.id);
@@ -265,7 +258,6 @@ app.patch('/api/admin/produits/:id/disponible', checkAuth, async (req, res) => {
   res.json({ success: true, disponible: p.disponible });
 });
 
-// POST — Upload images pour une couleur (route séparée)
 app.post('/api/admin/upload-color-images', checkAuth, colorUpload.array('images', 5), async (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Aucune image' });
@@ -274,7 +266,6 @@ app.post('/api/admin/upload-color-images', checkAuth, colorUpload.array('images'
   res.json({ success: true, urls });
 });
 
-// POST — Upload preuve de paiement
 app.post('/api/upload-payment', paymentUpload.single('screenshot'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Aucun fichier' });
@@ -285,28 +276,31 @@ app.post('/api/upload-payment', paymentUpload.single('screenshot'), async (req, 
   });
 });
 
-// ═══════════════════════════════════════════
-// HEALTH CHECK
-// ═══════════════════════════════════════════
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // ═══════════════════════════════════════════
-// FICHIERS STATIQUES
+// DASHBOARD ADMIN
 // ═══════════════════════════════════════════
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Dashboard admin
 app.use('/admin', express.static(path.join(__dirname, 'BACKEND', 'public')));
 app.get('/admin', (req, res) => res.redirect('/admin/'));
 app.get('/admin/', (req, res) => {
   res.sendFile(path.join(__dirname, 'BACKEND', 'public', 'index.html'));
 });
 
-// Frontend React (catch-all)
+// ═══════════════════════════════════════════
+// FRONTEND REACT (CATCH-ALL TOUJOURS EN DERNIER)
+// ═══════════════════════════════════════════
 app.use(express.static(path.join(__dirname, 'FRONTEND', 'dist')));
+
+// Catch-all: renvoie index.html UNIQUEMENT si ce n'est pas une route API
 app.get('*', (req, res) => {
+  // Si l'URL commence par /api, c'est une 404 API
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Route API non trouvee' });
+  }
+  // Sinon c'est une route React
   res.sendFile(path.join(__dirname, 'FRONTEND', 'dist', 'index.html'));
 });
 
@@ -318,3 +312,6 @@ app.listen(PORT, () => {
   console.log(`🌐 Site: http://localhost:${PORT}`);
   console.log(`🎛️  Admin: http://localhost:${PORT}/admin/`);
 });
+
+
+
