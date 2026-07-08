@@ -2,15 +2,13 @@
 // MONOLITH EDITORIAL — DASHBOARD LOGIC
 // ============================================
 
-// Détecte automatiquement l'URL de l'API
-// Si on est sur le même domaine que le backend (ex: /admin/ servi par le backend)
-// on utilise des URLs relatives. Sinon on pointe vers localhost.
-const API_BASE = '';  // URLs relatives = même serveur, même port
-  
+const API_BASE = '';
 
 let currentProduits = [];
 let deleteTargetId = null;
 let authPassword = localStorage.getItem('monolith_auth') || '';
+let colorBlocks = []; // {id, name, files: [], previews: []}
+let selectedSizes = new Set();
 
 // ============================================
 // AUTH
@@ -20,12 +18,12 @@ function doLogin() {
   const input = document.getElementById('password-input');
   const error = document.getElementById('login-error');
   const password = input.value.trim();
-  
+
   if (!password) {
     error.textContent = 'Entrez un mot de passe';
     return;
   }
-  
+
   fetch(`${API_BASE}/api/admin/stats`, {
     headers: { 'X-Admin-Password': password }
   })
@@ -64,16 +62,15 @@ function showDashboard() {
 function showSection(section) {
   document.querySelectorAll('.dash-section').forEach(s => s.classList.add('hidden'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  
+
   document.getElementById(`section-${section}`).classList.remove('hidden');
-  
-  // Trouve le lien correspondant et l'active
+
   const link = document.querySelector(`a[href="#${section}"]`);
   if (link) link.classList.add('active');
-  
+
   if (section === 'overview') loadStats();
   if (section === 'produits') loadProduits();
-  if (section === 'ajouter') resetForm();
+  if (section === 'ajouter') { resetForm(); }
 }
 
 // ============================================
@@ -82,8 +79,8 @@ function showSection(section) {
 
 async function api(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  console.log('API call:', url); // Debug
-  
+  console.log('API call:', url);
+
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -91,17 +88,17 @@ async function api(endpoint, options = {}) {
       ...options.headers
     }
   });
-  
+
   if (res.status === 403) {
     logout();
     throw new Error('Session expiree');
   }
-  
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || 'Erreur serveur');
   }
-  
+
   return res.json();
 }
 
@@ -118,7 +115,7 @@ async function loadCategories() {
       document.getElementById('form-categorie'),
       document.getElementById('filter-categorie')
     ];
-    
+
     selects.forEach(select => {
       if (!select) return;
       const options = cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
@@ -140,7 +137,7 @@ async function loadStats() {
     document.getElementById('stat-dispo').textContent = stats.disponibles;
     document.getElementById('stat-promo').textContent = stats.enPromo;
     document.getElementById('stat-rupture').textContent = stats.rupture;
-    
+
     const produits = await api('/api/admin/produits');
     currentProduits = produits;
     renderRecents(produits.slice(-4).reverse());
@@ -156,10 +153,14 @@ function renderRecents(produits) {
     grid.innerHTML = '<div class="recent-item"><div class="recent-item-name" style="color:var(--text-muted)">Aucun produit</div></div>';
     return;
   }
-  
+
   grid.innerHTML = produits.map(p => {
     const prixFinal = p.promotion > 0 ? Math.round(p.prix * (1 - p.promotion/100)) : p.prix;
+    const prixAvecLivraison = prixFinal + (p.livraison || 1000);
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
+    const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
+    const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
+
     return `
       <div class="recent-item">
         <img src="${imageUrl || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'}" 
@@ -170,6 +171,9 @@ function renderRecents(produits) {
           ${prixFinal} FCFA
           ${p.promotion > 0 ? `<span style="text-decoration:line-through;opacity:0.5;margin-left:8px">${p.prix}</span>` : ''}
         </div>
+        <div class="prix-final">Total: ${prixAvecLivraison} FCFA (livraison incluse)</div>
+        ${taillesStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:1px">${escapeHtml(taillesStr)}</div>` : ''}
+        ${couleursStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;letter-spacing:1px">${escapeHtml(couleursStr)}</div>` : ''}
         <div class="recent-item-status ${p.disponible !== false ? 'status-dispo' : 'status-rupture'}">
           ${p.disponible !== false ? 'EN LIGNE' : 'RUPTURE'}
         </div>
@@ -201,7 +205,7 @@ function escapeHtml(text) {
 
 function renderProduits(produits) {
   const tbody = document.getElementById('produits-tbody');
-  
+
   if (!produits.length) {
     tbody.innerHTML = `
       <tr>
@@ -212,10 +216,14 @@ function renderProduits(produits) {
     `;
     return;
   }
-  
+
   tbody.innerHTML = produits.map(p => {
     const prixFinal = p.promotion > 0 ? Math.round(p.prix * (1 - p.promotion/100)) : p.prix;
+    const prixAvecLivraison = prixFinal + (p.livraison || 1000);
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
+    const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
+    const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
+
     return `
       <tr>
         <td>
@@ -224,6 +232,8 @@ function renderProduits(produits) {
         <td>
           <div class="table-name">${escapeHtml(p.nom)}</div>
           ${p.description ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">${escapeHtml(p.description.substring(0, 50))}...</div>` : ''}
+          ${taillesStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:0.5px">Tailles: ${escapeHtml(taillesStr)}</div>` : ''}
+          ${couleursStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;letter-spacing:0.5px">Couleurs: ${escapeHtml(couleursStr)}</div>` : ''}
         </td>
         <td><span class="table-cat">${escapeHtml(p.categorie) || '—'}</span></td>
         <td>
@@ -231,6 +241,7 @@ function renderProduits(produits) {
             ${prixFinal} FCFA
           </span>
           ${p.promotion > 0 ? `<span class="table-price-original">${p.prix}</span>` : ''}
+          <div class="prix-final">+ livraison: ${prixAvecLivraison} FCFA</div>
         </td>
         <td>
           <button class="table-status" onclick="toggleDisponible('${p.id}', ${p.disponible !== false})">
@@ -263,21 +274,22 @@ function filterProduits() {
   const search = document.getElementById('search-input').value.toLowerCase();
   const cat = document.getElementById('filter-categorie').value;
   const statut = document.getElementById('filter-statut').value;
-  
+
   let filtered = currentProduits;
-  
+
   if (search) {
     filtered = filtered.filter(p => 
       (p.nom && p.nom.toLowerCase().includes(search)) ||
-      (p.categorie && p.categorie.toLowerCase().includes(search))
+      (p.categorie && p.categorie.toLowerCase().includes(search)) ||
+      (p.couleurs && p.couleurs.some(c => c.nom && c.nom.toLowerCase().includes(search)))
     );
   }
-  
+
   if (cat) filtered = filtered.filter(p => p.categorie === cat);
   if (statut === 'dispo') filtered = filtered.filter(p => p.disponible !== false);
   if (statut === 'rupture') filtered = filtered.filter(p => p.disponible === false);
   if (statut === 'promo') filtered = filtered.filter(p => p.promotion > 0);
-  
+
   renderProduits(filtered);
 }
 
@@ -293,6 +305,192 @@ async function toggleDisponible(id, current) {
 }
 
 // ============================================
+// TAILLES
+// ============================================
+
+function toggleSize(btn) {
+  const size = btn.dataset.size;
+  if (selectedSizes.has(size)) {
+    selectedSizes.delete(size);
+    btn.classList.remove('active');
+  } else {
+    selectedSizes.add(size);
+    btn.classList.add('active');
+  }
+  updateSizesInput();
+}
+
+function addCustomSize() {
+  const input = document.getElementById('custom-size-input');
+  const val = input.value.trim().toUpperCase();
+  if (!val) return;
+
+  const container = document.getElementById('sizes-container');
+  // Check if already exists
+  if (selectedSizes.has(val)) { input.value = ''; return; }
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'size-chip active';
+  btn.dataset.size = val;
+  btn.textContent = val;
+  btn.onclick = () => toggleSize(btn);
+  container.appendChild(btn);
+
+  selectedSizes.add(val);
+  updateSizesInput();
+  input.value = '';
+}
+
+function updateSizesInput() {
+  document.getElementById('form-tailles').value = JSON.stringify([...selectedSizes]);
+}
+
+function setSizes(tailles) {
+  selectedSizes.clear();
+  document.querySelectorAll('.size-chip').forEach(btn => {
+    btn.classList.remove('active');
+    if (tailles.includes(btn.dataset.size)) {
+      btn.classList.add('active');
+      selectedSizes.add(btn.dataset.size);
+    }
+  });
+  // Remove custom chips that are not in tailles
+  document.querySelectorAll('.size-chip').forEach(btn => {
+    if (!['S','M','L','XL','XXL','TU'].includes(btn.dataset.size)) {
+      if (!tailles.includes(btn.dataset.size)) {
+        btn.remove();
+      }
+    }
+  });
+  // Add custom ones
+  tailles.forEach(t => {
+    if (!['S','M','L','XL','XXL','TU'].includes(t) && !selectedSizes.has(t)) {
+      const container = document.getElementById('sizes-container');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'size-chip active';
+      btn.dataset.size = t;
+      btn.textContent = t;
+      btn.onclick = () => toggleSize(btn);
+      container.appendChild(btn);
+      selectedSizes.add(t);
+    }
+  });
+  updateSizesInput();
+}
+
+// ============================================
+// COULEURS
+// ============================================
+
+function addColorBlock(existing = null) {
+  const container = document.getElementById('colors-container');
+  const blockId = 'color-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+
+  const block = document.createElement('div');
+  block.className = 'color-block';
+  block.id = blockId;
+  block.dataset.blockId = blockId;
+
+  const colorName = existing ? existing.nom : '';
+  const existingImages = existing && existing.images ? existing.images : [];
+
+  block.innerHTML = `
+    <div class="color-block-header">
+      <input type="text" class="color-name-input" placeholder="Nom de la couleur (ex: Noir, Blanc...)" value="${escapeHtml(colorName)}">
+      <button type="button" class="color-remove-btn" onclick="removeColorBlock('${blockId}')">SUPPRIMER</button>
+    </div>
+    <div class="color-images-zone" onclick="document.getElementById('color-file-${blockId}').click()">
+      <input type="file" id="color-file-${blockId}" multiple accept="image/*" style="display:none" onchange="handleColorImages(this, '${blockId}')">
+      <div class="upload-icon">+</div>
+      <div class="upload-text">PHOTOS DE CETTE COULEUR</div>
+      <div class="upload-hint">JPG, PNG, WEBP — MAX 5MB</div>
+    </div>
+    <div class="color-images-preview" id="color-preview-${blockId}"></div>
+  `;
+
+  container.appendChild(block);
+
+  const blockData = { id: blockId, name: colorName, files: [], previews: [] };
+  colorBlocks.push(blockData);
+
+  // If editing, add existing image previews
+  if (existingImages.length) {
+    existingImages.forEach((imgUrl, idx) => {
+      const fullUrl = imgUrl.startsWith('http') ? imgUrl : `${API_BASE}${imgUrl}`;
+      blockData.previews.push({ url: fullUrl, isExisting: true, serverUrl: imgUrl });
+    });
+    renderColorPreview(blockId);
+  }
+}
+
+function removeColorBlock(blockId) {
+  const el = document.getElementById(blockId);
+  if (el) el.remove();
+  colorBlocks = colorBlocks.filter(b => b.id !== blockId);
+}
+
+function handleColorImages(input, blockId) {
+  if (!input.files || !input.files.length) return;
+  const block = colorBlocks.find(b => b.id === blockId);
+  if (!block) return;
+
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      block.files.push(file);
+      block.previews.push({ url: e.target.result, isExisting: false, file: file });
+      renderColorPreview(blockId);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderColorPreview(blockId) {
+  const block = colorBlocks.find(b => b.id === blockId);
+  const container = document.getElementById(`color-preview-${blockId}`);
+  if (!block || !container) return;
+
+  container.innerHTML = block.previews.map((prev, idx) => `
+    <div style="position:relative;display:inline-block;">
+      <img src="${prev.url}" class="color-img-thumb" alt="">
+      <button type="button" class="thumb-remove" onclick="removeColorImage('${blockId}', ${idx})" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:var(--danger);color:#fff;border:none;font-size:10px;cursor:pointer;border-radius:50%;">×</button>
+    </div>
+  `).join('');
+}
+
+function removeColorImage(blockId, idx) {
+  const block = colorBlocks.find(b => b.id === blockId);
+  if (!block) return;
+  block.previews.splice(idx, 1);
+  // Also remove from files if it was a new file
+  let fileIdx = 0;
+  for (let i = 0; i < block.previews.length + 1; i++) {
+    if (i < idx && !block.previews[i]?.isExisting) fileIdx++;
+  }
+  if (!block.previews[idx]?.isExisting && idx < block.files.length) {
+    block.files.splice(fileIdx, 1);
+  }
+  renderColorPreview(blockId);
+}
+
+function getColorsData() {
+  return colorBlocks.map(b => {
+    const nameInput = document.querySelector(`#${b.id} .color-name-input`);
+    const name = nameInput ? nameInput.value.trim() : '';
+    const existingImages = b.previews.filter(p => p.isExisting).map(p => p.serverUrl);
+    return { nom: name, images: existingImages };
+  }).filter(c => c.nom);
+}
+
+function clearColorBlocks() {
+  document.getElementById('colors-container').innerHTML = '';
+  colorBlocks = [];
+}
+
+// ============================================
 // FORM
 // ============================================
 
@@ -305,10 +503,19 @@ function editProduit(p) {
   document.getElementById('form-stock').value = p.stock || 0;
   document.getElementById('form-disponible').checked = p.disponible !== false;
   document.getElementById('form-description').value = p.description || '';
-  
+
+  // Tailles
+  setSizes(p.tailles || []);
+
+  // Couleurs
+  clearColorBlocks();
+  if (p.couleurs && p.couleurs.length) {
+    p.couleurs.forEach(c => addColorBlock(c));
+  }
+
   document.getElementById('form-title').textContent = 'MODIFIER PRODUIT';
   document.getElementById('btn-submit').textContent = 'METTRE A JOUR';
-  
+
   if (p.image) {
     const preview = document.getElementById('image-preview');
     preview.src = p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`;
@@ -316,7 +523,7 @@ function editProduit(p) {
     document.getElementById('upload-placeholder').classList.add('hidden');
     document.getElementById('btn-remove-img').classList.remove('hidden');
   }
-  
+
   showSection('ajouter');
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.querySelector('a[href="#ajouter"]').classList.add('active');
@@ -327,11 +534,22 @@ function resetForm() {
   document.getElementById('edit-id').value = '';
   document.getElementById('form-title').textContent = 'NOUVEAU PRODUIT';
   document.getElementById('btn-submit').textContent = 'ENREGISTRER';
-  
+
   document.getElementById('image-preview').classList.add('hidden');
   document.getElementById('upload-placeholder').classList.remove('hidden');
   document.getElementById('btn-remove-img').classList.add('hidden');
   document.getElementById('form-image').value = '';
+
+  // Reset tailles
+  selectedSizes.clear();
+  document.querySelectorAll('.size-chip').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.size-chip').forEach(btn => {
+    if (!['S','M','L','XL','XXL','TU'].includes(btn.dataset.size)) btn.remove();
+  });
+  updateSizesInput();
+
+  // Reset couleurs
+  clearColorBlocks();
 }
 
 function previewImage(input) {
@@ -357,10 +575,10 @@ function removeImage() {
 
 async function submitProduit(e) {
   e.preventDefault();
-  
+
   const id = document.getElementById('edit-id').value;
   const formData = new FormData();
-  
+
   formData.append('nom', document.getElementById('form-nom').value);
   formData.append('prix', document.getElementById('form-prix').value);
   formData.append('categorie', document.getElementById('form-categorie').value);
@@ -368,32 +586,69 @@ async function submitProduit(e) {
   formData.append('stock', document.getElementById('form-stock').value);
   formData.append('disponible', document.getElementById('form-disponible').checked);
   formData.append('description', document.getElementById('form-description').value);
-  
+
+  // Tailles
+  const tailles = [...selectedSizes];
+  formData.append('tailles', JSON.stringify(tailles));
+
+  // Image principale
   const imageFile = document.getElementById('form-image').files[0];
   if (imageFile) formData.append('image', imageFile);
-  
+
+  // Couleurs: d'abord upload les nouvelles images, puis construire le JSON
+  const colorsData = getColorsData();
+
+  // Upload new color images first
+  for (let i = 0; i < colorBlocks.length; i++) {
+    const block = colorBlocks[i];
+    const newPreviews = block.previews.filter(p => !p.isExisting);
+    if (newPreviews.length > 0) {
+      const colorForm = new FormData();
+      newPreviews.forEach(p => {
+        colorForm.append('images', p.file);
+      });
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/upload-color-images`, {
+          method: 'POST',
+          headers: { 'X-Admin-Password': authPassword },
+          body: colorForm
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.urls) {
+            colorsData[i].images.push(...data.urls);
+          }
+        }
+      } catch (err) {
+        console.error('Erreur upload images couleur:', err);
+      }
+    }
+  }
+
+  formData.append('couleurs', JSON.stringify(colorsData));
+
   try {
     const url = id ? `/api/admin/produits/${id}` : '/api/admin/produits';
     const method = id ? 'PUT' : 'POST';
-    
+
     const res = await fetch(`${API_BASE}${url}`, {
       method,
       headers: { 'X-Admin-Password': authPassword },
       body: formData
     });
-    
+
     if (!res.ok) {
       const text = await res.text();
       throw new Error(text || 'Erreur serveur');
     }
-    
+
     toast(id ? 'Produit mis a jour' : 'Produit cree', 'success');
     resetForm();
     loadStats();
     showSection('overview');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     document.querySelector('a[href="#overview"]').classList.add('active');
-    
+
   } catch (err) {
     toast(err.message, 'error');
   }
@@ -415,7 +670,7 @@ function closeModal() {
 
 async function confirmDelete() {
   if (!deleteTargetId) return;
-  
+
   try {
     await api(`/api/admin/produits/${deleteTargetId}`, { method: 'DELETE' });
     toast('Produit supprime', 'success');
@@ -437,7 +692,7 @@ function toast(message, type = 'success') {
   toast.className = `toast ${type}`;
   toast.textContent = message;
   container.appendChild(toast);
-  
+
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transform = 'translateX(100%)';

@@ -1,22 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, Zap } from 'lucide-react';
-import { fetchProduct, type ApiProduct } from '../api';
+import { fetchProduct, getImageUrl, type ApiProduct } from '../api';
 import { useCart } from '../context/CartContext';
 import { BrandLogo } from '../components/BrandLogo';
-import { getImageUrl } from '../api';
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { addToCart } = useCart();
-  
+
   const [product, setProduct] = useState<ApiProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  const [selectedSize, setSelectedSize] = useState('M');
-  const [selectedColor, setSelectedColor] = useState({ name: 'Noir', hex: '#000000' });
+
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -24,6 +23,12 @@ export default function ProductDetail() {
     fetchProduct(id)
       .then(data => {
         setProduct(data);
+        if (data.tailles && data.tailles.length > 0) {
+          setSelectedSize(data.tailles[0]);
+        }
+        if (data.couleurs && data.couleurs.length > 0) {
+          setSelectedColor(data.couleurs[0].nom);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -50,14 +55,20 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
+    if (!selectedSize) { alert('Veuillez choisir une taille'); return; }
+    if (!selectedColor) { alert('Veuillez choisir une couleur'); return; }
+
+    const prixFinal = product.promotion > 0 
+      ? Math.round(product.prix * (1 - product.promotion/100))
+      : product.prix;
+
     addToCart({
       productId: product.id,
       name: product.nom,
-      price: product.promotion > 0 
-        ? Math.round(product.prix * (1 - product.promotion/100))
-        : product.prix,
+      price: prixFinal,
+      livraison: product.livraison || 1000,
       size: selectedSize,
-      color: selectedColor.name,
+      color: selectedColor,
       image: product.image || '/placeholder.png',
       quantity: 1
     });
@@ -67,17 +78,44 @@ export default function ProductDetail() {
     ? Math.round(product.prix * (1 - product.promotion/100))
     : product.prix;
 
+  const prixAvecLivraison = prixFinal + (product.livraison || 1000);
+
+  const currentColor = product.couleurs?.[selectedColorIndex];
+  const colorImages = currentColor?.images || [];
+  const mainImage = colorImages.length > 0 
+    ? getImageUrl(colorImages[currentImageIndex])
+    : getImageUrl(product.image);
+
   return (
     <div className="pt-20 pb-24 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-        {/* Image */}
-        <div className="lg:col-span-7 bg-white relative aspect-[3/4] md:aspect-auto md:h-[calc(100vh-80px)] overflow-hidden">
-          <img 
-           src={getImageUrl(product.image)} 
-            alt={product.nom}
-           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
-            referrerPolicy="no-referrer"
-          /></div>
+        {/* Images */}
+        <div className="lg:col-span-7 bg-white relative">
+          <div className="aspect-[3/4] md:aspect-auto md:h-[calc(100vh-80px)] overflow-hidden relative">
+            <img 
+              src={mainImage}
+              alt={product.nom}
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+
+          {colorImages.length > 1 && (
+            <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto">
+              {colorImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`w-16 h-16 border-2 flex-shrink-0 overflow-hidden ${
+                    idx === currentImageIndex ? 'border-black' : 'border-zinc-200'
+                  }`}
+                >
+                  <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Details */}
         <div className="lg:col-span-5 px-6 py-12 lg:px-16 lg:py-20 flex flex-col justify-between">
@@ -87,43 +125,83 @@ export default function ProductDetail() {
                 <span className="font-body text-[10px] tracking-[0.3em] font-bold text-zinc-400 uppercase mb-2 block">ESSENTIALS ARCHIVE</span>
                 <h1 className="text-5xl font-black uppercase tracking-tighter leading-none mb-4 md:mb-0 font-headline">{product.nom}</h1>
               </div>
-              <span className="text-2xl font-headline font-bold whitespace-nowrap shrink-0">
-                {prixFinal.toLocaleString('fr-FR')} FCFA
+              <div className="text-right">
+                <span className="text-2xl font-headline font-bold whitespace-nowrap shrink-0 block">
+                  {prixFinal.toLocaleString('fr-FR')} FCFA
+                </span>
                 {product.promotion > 0 && (
-                  <span className="text-sm text-zinc-400 line-through ml-2">{product.prix.toLocaleString('fr-FR')} FCFA</span>
+                  <span className="text-sm text-zinc-400 line-through block">{product.prix.toLocaleString('fr-FR')} FCFA</span>
                 )}
-              </span>
+                <span className="text-xs text-zinc-500 mt-1 block">
+                  + {product.livraison || 1000} FCFA livraison
+                </span>
+                <span className="text-sm font-bold text-black mt-1 block">
+                  Total: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
+                </span>
+              </div>
             </div>
-            
+
             <div className="mb-10 flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${product.disponible ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase font-body">
                 {product.disponible ? 'EN STOCK' : 'RUPTURE DE STOCK'}
               </span>
             </div>
-            
+
             <p className="font-body text-sm leading-relaxed text-on-surface-variant mb-12 max-w-md">
               {product.description}
             </p>
 
             <div className="space-y-12">
+              {/* Color Selector */}
+              {product.couleurs && product.couleurs.length > 0 && (
+                <div>
+                  <span className="font-headline font-extrabold text-xs tracking-widest uppercase mb-4 block">SELECT COLOR</span>
+                  <div className="flex gap-3">
+                    {product.couleurs.map((color, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => { 
+                          setSelectedColor(color.nom); 
+                          setSelectedColorIndex(idx);
+                          setCurrentImageIndex(0);
+                        }}
+                        className={`px-4 py-3 border text-xs font-bold tracking-widest uppercase transition-all ${
+                          selectedColor === color.nom 
+                            ? 'border-black bg-black text-white' 
+                            : 'border-zinc-200 text-zinc-500 hover:border-zinc-400'
+                        }`}
+                      >
+                        {color.nom}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Size Selector */}
-              <div>
-                <div className="flex justify-between items-end mb-4">
-                  <span className="font-headline font-extrabold text-xs tracking-widest uppercase">SELECT SIZE</span>
+              {product.tailles && product.tailles.length > 0 && (
+                <div>
+                  <div className="flex justify-between items-end mb-4">
+                    <span className="font-headline font-extrabold text-xs tracking-widest uppercase">SELECT SIZE</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {product.tailles.map(size => (
+                      <button 
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`h-14 flex items-center justify-center font-bold text-xs transition-colors ${
+                          selectedSize === size 
+                            ? 'bg-black text-white' 
+                            : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {['S', 'M', 'L', 'XL'].map(size => (
-                    <button 
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`h-14 flex items-center justify-center font-bold text-xs transition-colors ${selectedSize === size ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-zinc-400 hover:bg-zinc-200'}`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -131,7 +209,7 @@ export default function ProductDetail() {
             <button 
               onClick={handleAddToCart}
               disabled={!product.disponible}
-              className="w-full bg-primary text-on-primary h-20 font-headline font-black text-xl tracking-tighter uppercase flex items-center justify-center gap-4 hover:bg-primary-fixed transition-colors active:scale-[0.98] duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-black text-white h-20 font-headline font-black text-xl tracking-tighter uppercase flex items-center justify-center gap-4 hover:bg-zinc-800 transition-colors active:scale-[0.98] duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {product.disponible ? 'ADD TO COMMANDER' : 'INDISPONIBLE'}
               <ArrowRight className="w-5 h-5" />
@@ -140,8 +218,7 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      {/* Editorial Section */}
-      <div className="mt-20 px-6 py-20 bg-surface-container-low flex flex-col items-center text-center">
+      <div className="mt-20 px-6 py-20 bg-zinc-100 flex flex-col items-center text-center">
         <Zap className="w-10 h-10 mb-6" />
         <h2 className="text-4xl font-black uppercase tracking-tighter max-w-xl mb-6 font-headline flex items-center justify-center flex-wrap gap-x-2">
           <span>ENGINEERED FOR THE URBAN</span> <BrandLogo />.

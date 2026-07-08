@@ -12,11 +12,12 @@ export default function CartDrawer() {
     removeFromCart, 
     updateQuantity, 
     updateSize,
-    cartTotal 
+    cartTotal,
+    cartSubtotal,
+    cartShipping
   } = useCart();
   const navigate = useNavigate();
 
-  // Lock body scroll when cart is open
   useEffect(() => {
     if (isCartOpen) {
       document.body.style.overflow = 'hidden';
@@ -37,15 +38,12 @@ export default function CartDrawer() {
 
   return (
     <>
-      {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity"
         onClick={closeCart}
       />
 
-      {/* Drawer */}
       <div className="fixed top-0 right-0 h-[100dvh] w-full md:w-[450px] bg-white z-[70] shadow-2xl flex flex-col transform transition-transform duration-300">
-        {/* Header */}
         <div className="h-20 px-6 flex items-center justify-between border-b border-outline-variant/10 shrink-0">
           <h2 className="font-headline font-black text-2xl tracking-tighter uppercase">CART ({cartItems.reduce((a, b) => a + b.quantity, 0)})</h2>
           <button onClick={closeCart} className="p-2 hover:bg-zinc-100 rounded-full transition-colors">
@@ -53,7 +51,6 @@ export default function CartDrawer() {
           </button>
         </div>
 
-        {/* Cart Items */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6">
           {cartItems.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-zinc-400">
@@ -67,9 +64,8 @@ export default function CartDrawer() {
             </div>
           ) : (
             cartItems.map(item => {
-              // Find the original product to get available sizes
               const product = products.find(p => p.id === item.productId);
-              
+
               return (
                 <div key={item.id} className="flex gap-4 bg-surface-container-lowest p-4 relative group">
                   <button 
@@ -78,7 +74,7 @@ export default function CartDrawer() {
                   >
                     <X className="w-4 h-4" />
                   </button>
-                  
+
                   <div className="w-20 aspect-[3/4] bg-surface-container-low shrink-0">
                     <img 
                       src={item.image} 
@@ -87,15 +83,14 @@ export default function CartDrawer() {
                       referrerPolicy="no-referrer"
                     />
                   </div>
-                  
+
                   <div className="flex flex-col justify-between flex-1">
                     <div className="pr-6">
                       <h4 className="font-bold text-xs tracking-tight uppercase font-headline line-clamp-2">{item.name}</h4>
                       <p className="text-[10px] text-on-surface-variant tracking-widest uppercase mt-1 font-body">{item.color}</p>
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-4">
-                      {/* Size Selector */}
                       <div className="flex flex-col">
                         <span className="text-[9px] font-bold text-zinc-400 tracking-widest uppercase font-body mb-1">SIZE</span>
                         {product ? (
@@ -113,7 +108,6 @@ export default function CartDrawer() {
                         )}
                       </div>
 
-                      {/* Quantity Selector */}
                       <div className="flex flex-col items-end">
                         <span className="text-[9px] font-bold text-zinc-400 tracking-widest uppercase font-body mb-1">QTY</span>
                         <div className="flex items-center gap-3 border border-zinc-200 px-2 py-1">
@@ -135,7 +129,7 @@ export default function CartDrawer() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-sm font-black tracking-tighter uppercase font-headline mt-3 whitespace-nowrap">
                       {(item.price * item.quantity).toLocaleString('fr-FR')} FCFA
                     </div>
@@ -146,12 +140,21 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {/* Footer */}
         {cartItems.length > 0 && (
           <div className="p-6 border-t border-outline-variant/10 bg-surface-container-lowest shrink-0">
-            <div className="flex justify-between items-center mb-6 gap-4">
-              <span className="text-xs font-bold tracking-widest uppercase font-headline">Subtotal</span>
-              <span className="text-xl font-black tracking-tighter uppercase font-headline whitespace-nowrap">{cartTotal.toLocaleString('fr-FR')} FCFA</span>
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-zinc-400">Sous-total</span>
+                <span className="text-sm font-bold">{cartSubtotal.toLocaleString('fr-FR')} FCFA</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-zinc-400">Livraison</span>
+                <span className="text-sm font-bold text-zinc-400">{cartShipping.toLocaleString('fr-FR')} FCFA</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-zinc-200">
+                <span className="text-xs font-black tracking-widest uppercase">Total</span>
+                <span className="text-xl font-black tracking-tighter">{cartTotal.toLocaleString('fr-FR')} FCFA</span>
+              </div>
             </div>
             <button 
               onClick={handleCheckout}

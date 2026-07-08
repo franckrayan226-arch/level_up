@@ -6,8 +6,8 @@
   <title>MONOLITH — DASHBOARD</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <!-- CHEMIN RELATIF -->
   <link rel="stylesheet" href="style.css">
+<base target="_blank">
 </head>
 <body>
   <!-- LOGIN SCREEN -->
@@ -45,7 +45,7 @@
         <h1 class="section-title">OVERVIEW</h1>
         <div class="section-line"></div>
       </div>
-      
+
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-number" id="stat-total">0</div>
@@ -77,7 +77,7 @@
         <h1 class="section-title">TOUS LES PRODUITS</h1>
         <div class="section-line"></div>
       </div>
-      
+
       <div class="filters-bar">
         <input type="text" id="search-input" placeholder="Rechercher..." onkeyup="filterProduits()">
         <select id="filter-categorie" onchange="filterProduits()">
@@ -114,38 +114,38 @@
         <h1 class="section-title" id="form-title">NOUVEAU PRODUIT</h1>
         <div class="section-line"></div>
       </div>
-      
+
       <form id="produit-form" class="produit-form" onsubmit="submitProduit(event)">
         <input type="hidden" id="edit-id">
-        
+
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">NOM DU PRODUIT *</label>
             <input type="text" id="form-nom" required class="form-input" placeholder="Ex: OVERSIZED HOODIE">
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">PRIX (FCFA) *</label>
             <input type="number" id="form-prix" required class="form-input" placeholder="25000">
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">CATEGORIE</label>
             <select id="form-categorie" class="form-input form-select">
               <option value="">Selectionner...</option>
             </select>
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">PROMOTION %</label>
             <input type="number" id="form-promotion" min="0" max="100" value="0" class="form-input">
           </div>
-          
+
           <div class="form-group">
             <label class="form-label">STOCK</label>
             <input type="number" id="form-stock" min="0" value="0" class="form-input">
           </div>
-          
+
           <div class="form-group form-group-check">
             <label class="form-check">
               <input type="checkbox" id="form-disponible" checked>
@@ -154,14 +154,39 @@
             </label>
           </div>
         </div>
-        
+
         <div class="form-group form-group-full">
           <label class="form-label">DESCRIPTION</label>
           <textarea id="form-description" rows="3" class="form-input form-textarea" placeholder="Description du produit..."></textarea>
         </div>
-        
-        <div class="form-group form-group-full">
-          <label class="form-label">IMAGE</label>
+
+        <!-- TAILLES -->
+        <div class="form-group form-group-full" style="margin-top:24px">
+          <label class="form-label">TAILLES DISPONIBLES</label>
+          <div class="sizes-container" id="sizes-container">
+            <button type="button" class="size-chip" data-size="S" onclick="toggleSize(this)">S</button>
+            <button type="button" class="size-chip" data-size="M" onclick="toggleSize(this)">M</button>
+            <button type="button" class="size-chip" data-size="L" onclick="toggleSize(this)">L</button>
+            <button type="button" class="size-chip" data-size="XL" onclick="toggleSize(this)">XL</button>
+            <button type="button" class="size-chip" data-size="XXL" onclick="toggleSize(this)">XXL</button>
+            <button type="button" class="size-chip" data-size="TU" onclick="toggleSize(this)">TU</button>
+          </div>
+          <div class="size-input-row">
+            <input type="text" id="custom-size-input" placeholder="Taille custom (ex: 42, 28cm...)">
+            <button type="button" onclick="addCustomSize()">AJOUTER</button>
+          </div>
+          <input type="hidden" id="form-tailles" value="[]">
+        </div>
+
+        <!-- COULEURS -->
+        <div class="form-group form-group-full" style="margin-top:24px">
+          <label class="form-label">COULEURS & PHOTOS</label>
+          <div id="colors-container"></div>
+          <button type="button" class="btn-add-color" onclick="addColorBlock()">+ AJOUTER UNE COULEUR</button>
+        </div>
+
+        <div class="form-group form-group-full" style="margin-top:24px">
+          <label class="form-label">IMAGE PRINCIPALE</label>
           <div class="image-upload" id="image-upload-zone">
             <input type="file" id="form-image" accept="image/*" onchange="previewImage(this)">
             <div class="upload-placeholder" id="upload-placeholder">
@@ -169,11 +194,17 @@
               <div class="upload-text">CLIQUER POUR UPLOADER</div>
               <div class="upload-hint">JPG, PNG, WEBP — MAX 5MB</div>
             </div>
-            <img id="image-preview" class="image-preview hidden">
+            <img id="image-preview" class="image-preview hidden" alt="">
             <button type="button" class="image-remove hidden" onclick="removeImage()" id="btn-remove-img">SUPPRIMER</button>
           </div>
         </div>
-        
+
+        <!-- INFO LIVRAISON -->
+        <div class="form-group form-group-full" style="margin-top:16px; padding:16px; border:1px solid var(--border); background:var(--bg-card);">
+          <div style="font-size:11px; font-weight:600; letter-spacing:2px; color:var(--text-muted); margin-bottom:8px;">LIVRAISON</div>
+          <div style="font-size:13px; color:var(--text);">+1000 FCFA de frais de livraison seront automatiquement ajoutes a chaque commande.</div>
+        </div>
+
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" onclick="resetForm()">ANNULER</button>
           <button type="submit" class="btn btn-primary" id="btn-submit">ENREGISTRER</button>
@@ -198,7 +229,6 @@
     </div>
   </div>
 
-  <!-- CHEMIN RELATIF -->
   <script src="app.js"></script>
 </body>
 </html>

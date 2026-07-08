@@ -46,7 +46,7 @@ export default function Home() {
           </div>
           <Link to="/shop" className="font-label text-[10px] md:text-xs tracking-widest border-b border-primary pb-1 font-bold uppercase">VIEW ALL</Link>
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full"></div>
@@ -69,11 +69,22 @@ export default function Home() {
                     <p className="font-headline font-black text-lg md:text-3xl tracking-tighter uppercase">{displayProducts[0].nom}</p>
                     <p className="font-body text-[10px] md:text-sm text-zinc-500 uppercase tracking-widest mt-1 md:mt-2">{displayProducts[0].description?.substring(0, 60)}...</p>
                   </div>
-                  <p className="font-headline font-black text-lg md:text-2xl tracking-tighter whitespace-nowrap shrink-0 mt-1 xl:mt-0">
-                    {displayProducts[0].promotion > 0 
-                      ? Math.round(displayProducts[0].prix * (1 - displayProducts[0].promotion/100)).toLocaleString('fr-FR')
-                      : displayProducts[0].prix.toLocaleString('fr-FR')} FCFA
-                  </p>
+                  {(() => {
+                    const prixFinal = displayProducts[0].promotion > 0 
+                      ? Math.round(displayProducts[0].prix * (1 - displayProducts[0].promotion/100))
+                      : displayProducts[0].prix;
+                    const prixAvecLivraison = prixFinal + (displayProducts[0].livraison || 1000);
+                    return (
+                      <div className="text-right">
+                        <p className="font-headline font-black text-lg md:text-2xl tracking-tighter whitespace-nowrap shrink-0 mt-1 xl:mt-0">
+                          {prixFinal.toLocaleString('fr-FR')} FCFA
+                        </p>
+                        <p className="font-body text-[9px] text-zinc-400 tracking-wider">
+                          + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </Link>
             )}
@@ -94,11 +105,22 @@ export default function Home() {
                     <p className="font-headline font-black text-xs md:text-xl tracking-tighter uppercase leading-tight">{displayProducts[1].nom}</p>
                     <p className="font-body text-[9px] md:text-xs text-zinc-500 uppercase tracking-widest mt-1">Essential</p>
                   </div>
-                  <p className="font-headline font-black text-xs md:text-xl tracking-tighter whitespace-nowrap shrink-0">
-                    {displayProducts[1].promotion > 0 
-                      ? Math.round(displayProducts[1].prix * (1 - displayProducts[1].promotion/100)).toLocaleString('fr-FR')
-                      : displayProducts[1].prix.toLocaleString('fr-FR')} FCFA
-                  </p>
+                  {(() => {
+                    const prixFinal = displayProducts[1].promotion > 0 
+                      ? Math.round(displayProducts[1].prix * (1 - displayProducts[1].promotion/100))
+                      : displayProducts[1].prix;
+                    const prixAvecLivraison = prixFinal + (displayProducts[1].livraison || 1000);
+                    return (
+                      <div className="text-right">
+                        <p className="font-headline font-black text-xs md:text-xl tracking-tighter whitespace-nowrap shrink-0">
+                          {prixFinal.toLocaleString('fr-FR')} FCFA
+                        </p>
+                        <p className="font-body text-[9px] text-zinc-400 tracking-wider">
+                          + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </Link>
             )}
@@ -119,11 +141,22 @@ export default function Home() {
                     <p className="font-headline font-black text-xs md:text-xl tracking-tighter uppercase leading-tight">{displayProducts[2].nom}</p>
                     <p className="font-body text-[9px] md:text-xs text-zinc-500 uppercase tracking-widest mt-1">Technical</p>
                   </div>
-                  <p className="font-headline font-black text-xs md:text-xl tracking-tighter whitespace-nowrap shrink-0">
-                    {displayProducts[2].promotion > 0 
-                      ? Math.round(displayProducts[2].prix * (1 - displayProducts[2].promotion/100)).toLocaleString('fr-FR')
-                      : displayProducts[2].prix.toLocaleString('fr-FR')} FCFA
-                  </p>
+                  {(() => {
+                    const prixFinal = displayProducts[2].promotion > 0 
+                      ? Math.round(displayProducts[2].prix * (1 - displayProducts[2].promotion/100))
+                      : displayProducts[2].prix;
+                    const prixAvecLivraison = prixFinal + (displayProducts[2].livraison || 1000);
+                    return (
+                      <div className="text-right">
+                        <p className="font-headline font-black text-xs md:text-xl tracking-tighter whitespace-nowrap shrink-0">
+                          {prixFinal.toLocaleString('fr-FR')} FCFA
+                        </p>
+                        <p className="font-body text-[9px] text-zinc-400 tracking-wider">
+                          + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </Link>
             )}
@@ -144,11 +177,22 @@ export default function Home() {
                     <p className="font-headline font-black text-lg md:text-3xl tracking-tighter uppercase">{displayProducts[3].nom}</p>
                     <p className="font-body text-[10px] md:text-sm text-zinc-500 uppercase tracking-widest mt-1 md:mt-2">{displayProducts[3].description?.substring(0, 60)}...</p>
                   </div>
-                  <p className="font-headline font-black text-lg md:text-2xl tracking-tighter whitespace-nowrap shrink-0 mt-1 xl:mt-0">
-                    {displayProducts[3].promotion > 0 
-                      ? Math.round(displayProducts[3].prix * (1 - displayProducts[3].promotion/100)).toLocaleString('fr-FR')
-                      : displayProducts[3].prix.toLocaleString('fr-FR')} FCFA
-                  </p>
+                  {(() => {
+                    const prixFinal = displayProducts[3].promotion > 0 
+                      ? Math.round(displayProducts[3].prix * (1 - displayProducts[3].promotion/100))
+                      : displayProducts[3].prix;
+                    const prixAvecLivraison = prixFinal + (displayProducts[3].livraison || 1000);
+                    return (
+                      <div className="text-right">
+                        <p className="font-headline font-black text-lg md:text-2xl tracking-tighter whitespace-nowrap shrink-0 mt-1 xl:mt-0">
+                          {prixFinal.toLocaleString('fr-FR')} FCFA
+                        </p>
+                        <p className="font-body text-[9px] text-zinc-400 tracking-wider">
+                          + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </Link>
             )}

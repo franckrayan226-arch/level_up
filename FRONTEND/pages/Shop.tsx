@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchProducts, type ApiProduct } from '../api';
 import { fetchProducts, getImageUrl, type ApiProduct } from '../api';
+
 export default function Shop() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,31 +44,49 @@ export default function Shop() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-12">
-        {products.map((product) => (
-          <Link to={`/product/${product.id}`} key={product.id} className="flex flex-col gap-4 group">
-            <div className="aspect-[3/4] bg-white overflow-hidden">
-              
-              <img 
-             src={getImageUrl(product.image)} 
-             alt={product.nom}
-             className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
-             referrerPolicy="no-referrer"
-             />
-              
-            </div>
-            <div className="flex flex-col gap-1">
-              <h3 className="font-headline font-bold text-base leading-tight uppercase tracking-tight">{product.nom}</h3>
-              <div className="flex flex-col xl:flex-row justify-between xl:items-baseline gap-1">
-                <span className="font-body text-xs font-medium text-zinc-500 whitespace-nowrap">
-                  {product.promotion > 0 
-                    ? Math.round(product.prix * (1 - product.promotion/100)).toLocaleString('fr-FR') 
-                    : product.prix.toLocaleString('fr-FR')} FCFA
-                </span>
-                <span className="font-body text-[9px] font-bold text-zinc-400 tracking-tighter uppercase">{product.categorie}</span>
+        {products.map((product) => {
+          const prixFinal = product.promotion > 0 
+            ? Math.round(product.prix * (1 - product.promotion/100))
+            : product.prix;
+          const prixAvecLivraison = prixFinal + (product.livraison || 1000);
+          const taillesStr = product.tailles?.join(' / ') || '';
+          const couleursStr = product.couleurs?.map(c => c.nom).join(' / ') || '';
+
+          return (
+            <Link to={`/product/${product.id}`} key={product.id} className="flex flex-col gap-4 group">
+              <div className="aspect-[3/4] bg-white overflow-hidden">
+                <img 
+                  src={getImageUrl(product.image)} 
+                  alt={product.nom}
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
+                  referrerPolicy="no-referrer"
+                />
               </div>
-            </div>
-          </Link>
-        ))}
+              <div className="flex flex-col gap-1">
+                <h3 className="font-headline font-bold text-base leading-tight uppercase tracking-tight">{product.nom}</h3>
+                <div className="flex flex-col xl:flex-row justify-between xl:items-baseline gap-1">
+                  <span className="font-body text-xs font-medium text-zinc-500 whitespace-nowrap">
+                    {prixFinal.toLocaleString('fr-FR')} FCFA
+                  </span>
+                  <span className="font-body text-[9px] font-bold text-zinc-400 tracking-tighter uppercase">{product.categorie}</span>
+                </div>
+                <span className="font-body text-[9px] text-zinc-400 tracking-tighter">
+                  + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
+                </span>
+                {taillesStr && (
+                  <span className="font-body text-[9px] text-zinc-400 tracking-wider mt-1">
+                    Tailles: {taillesStr}
+                  </span>
+                )}
+                {couleursStr && (
+                  <span className="font-body text-[9px] text-zinc-400 tracking-wider">
+                    Couleurs: {couleursStr}
+                  </span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       <div className="mt-24 mb-12">

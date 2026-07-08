@@ -5,6 +5,7 @@ export interface CartItem {
   productId: string;
   name: string;
   price: number;
+  livraison: number;
   size: string;
   color: string;
   image: string;
@@ -17,7 +18,10 @@ interface CartContextType {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   updateSize: (id: string, newSize: string) => void;
+  updateColor: (id: string, newColor: string) => void;
   cartTotal: number;
+  cartSubtotal: number;
+  cartShipping: number;
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -62,22 +66,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!itemToUpdate) return prev;
 
       const newId = `${itemToUpdate.productId}-${newSize}-${itemToUpdate.color}`;
-      
-      // If an item with the new size already exists, merge them
       const existingNewSizeItem = prev.find(i => i.id === newId);
-      
+
       if (existingNewSizeItem) {
         return prev
-          .filter(i => i.id !== id) // remove old item
+          .filter(i => i.id !== id)
           .map(i => i.id === newId ? { ...i, quantity: i.quantity + itemToUpdate.quantity } : i);
       }
 
-      // Otherwise just update the size and id of the current item
       return prev.map(i => i.id === id ? { ...i, id: newId, size: newSize } : i);
     });
   };
 
-  const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const updateColor = (id: string, newColor: string) => {
+    setCartItems(prev => {
+      const itemToUpdate = prev.find(i => i.id === id);
+      if (!itemToUpdate) return prev;
+
+      const newId = `${itemToUpdate.productId}-${itemToUpdate.size}-${newColor}`;
+      const existingNewColorItem = prev.find(i => i.id === newId);
+
+      if (existingNewColorItem) {
+        return prev
+          .filter(i => i.id !== id)
+          .map(i => i.id === newId ? { ...i, quantity: i.quantity + itemToUpdate.quantity } : i);
+      }
+
+      return prev.map(i => i.id === id ? { ...i, id: newId, color: newColor } : i);
+    });
+  };
+
+  const cartSubtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const cartShipping = cartItems.length > 0 ? 1000 : 0;
+  const cartTotal = cartSubtotal + cartShipping;
 
   return (
     <CartContext.Provider value={{ 
@@ -86,7 +107,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart, 
       updateQuantity, 
       updateSize,
+      updateColor,
       cartTotal,
+      cartSubtotal,
+      cartShipping,
       isCartOpen,
       openCart,
       closeCart

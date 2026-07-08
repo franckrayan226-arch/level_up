@@ -8,6 +8,7 @@
   ],
   "parametres": {
     "nomBoutique": "MONOLITH",
-    "devise": "FCFA"
+    "devise": "FCFA",
+    "fraisLivraison": 1000
   }
 }

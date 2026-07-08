@@ -47,8 +47,8 @@ const PAYMENT_METHODS: Record<PaymentMethod, PaymentInfo> = {
 };
 
 export default function CheckoutWhatsApp() {
-  const { cartItems, cartTotal, removeFromCart, updateQuantity } = useCart();
-  
+  const { cartItems, cartTotal, cartSubtotal, cartShipping, removeFromCart, updateQuantity } = useCart();
+
   // Formulaire client
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -56,7 +56,7 @@ export default function CheckoutWhatsApp() {
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
   const [coordinates, setCoordinates] = useState<{lat: number, lon: number} | null>(null);
-  
+
   // Paiement
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('orange');
   const [screenshot, setScreenshot] = useState<string | null>(null);
@@ -82,7 +82,7 @@ export default function CheckoutWhatsApp() {
         try {
           const { latitude, longitude } = position.coords;
           setCoordinates({ lat: latitude, lon: longitude });
-          
+
           const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           if (!response.ok) throw new Error('Failed');
           const data = await response.json();
@@ -103,7 +103,7 @@ export default function CheckoutWhatsApp() {
   // Lancer le paiement automatique
   const initiatePayment = () => {
     const method = PAYMENT_METHODS[paymentMethod];
-    
+
     if (paymentMethod === 'wave') {
       // Wave n'a pas de code USSD standard, on ouvre l'app ou le site
       window.open(`https://wave.com/send?amount=${cartTotal}&phone=22663293139`, '_blank');
@@ -112,7 +112,7 @@ export default function CheckoutWhatsApp() {
       const ussdCode = method.ussdCode;
       window.location.href = `tel:${ussdCode}`;
     }
-    
+
     setPaymentInitiated(true);
   };
 
@@ -120,7 +120,7 @@ export default function CheckoutWhatsApp() {
   const uploadScreenshot = async (file: File): Promise<string | null> => {
     const formData = new FormData();
     formData.append('screenshot', file);
-    
+
     try {
       const res = await fetch('/api/upload-payment', {
         method: 'POST',
@@ -179,7 +179,7 @@ export default function CheckoutWhatsApp() {
     }
 
     const method = PAYMENT_METHODS[paymentMethod];
-    
+
     let message = `🛒 *NOUVELLE COMMANDE - MONOLITH*\n\n`;
     message += `*Client:* ${fullName}\n`;
     message += `*Téléphone:* ${phone}\n`;
@@ -188,21 +188,23 @@ export default function CheckoutWhatsApp() {
       message += `*GPS:* https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}\n`;
     }
     message += `\n*Produits:*\n`;
-    
+
     cartItems.forEach(item => {
       message += `- ${item.quantity}x ${item.name} (${item.size}, ${item.color}) = ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\n`;
     });
-    
-    message += `\n*Total:* ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
+
+    message += `\n*Sous-total:* ${cartSubtotal.toLocaleString('fr-FR')} FCFA\n`;
+    message += `*Livraison:* ${cartShipping.toLocaleString('fr-FR')} FCFA\n`;
+    message += `*Total:* ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
     message += `*Paiement:* ${method.name}\n`;
-    
+
     if (imageUrl) {
       message += `\n📎 *Preuve de paiement:* ${window.location.origin}${imageUrl}`;
     }
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/22663293139?text=${encodedMessage}`;
-    
+
     window.open(whatsappUrl, '_blank');
     setIsSubmitting(false);
   };
@@ -228,14 +230,14 @@ export default function CheckoutWhatsApp() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
         {/* Left: Formulaire */}
         <div className="lg:col-span-7 space-y-12">
-          
+
           {/* Informations client */}
           <section>
             <h2 className="text-xl font-extrabold tracking-tighter uppercase mb-8 flex items-center gap-2 font-headline">
               <MapPin className="w-5 h-5" />
               Informations de livraison
             </h2>
-            
+
             <div className="space-y-8">
               <div>
                 <label className="block text-[10px] font-bold tracking-widest uppercase text-zinc-500 mb-2 font-body">Nom complet *</label>
@@ -300,7 +302,7 @@ export default function CheckoutWhatsApp() {
               <CreditCard className="w-5 h-5" />
               Paiement
             </h2>
-            
+
             <div className="space-y-4">
               {/* Sélection méthode */}
               <div className="grid grid-cols-3 gap-3">
@@ -333,8 +335,9 @@ export default function CheckoutWhatsApp() {
                   <h3 className="text-sm font-bold tracking-tight uppercase mb-2 font-headline">1. Effectuez le paiement</h3>
                   <p className="text-xs text-zinc-500 font-body mb-4">
                     Montant à payer: <strong className="text-primary" style={{ color: currentMethod.color }}>{cartTotal.toLocaleString('fr-FR')} FCFA</strong>
+                    <span className="block text-[10px] text-zinc-400 mt-1">(produits + livraison 1000 FCFA)</span>
                   </p>
-                  
+
                   {/* Bouton lancer paiement */}
                   <button
                     onClick={initiatePayment}
@@ -346,13 +349,13 @@ export default function CheckoutWhatsApp() {
                       {paymentMethod === 'wave' ? 'OUVRIR WAVE' : `COMPOSER ${currentMethod.ussdCode}`}
                     </span>
                   </button>
-                  
+
                   {paymentInitiated && (
                     <p className="text-[10px] text-green-600 mt-2 font-body text-center">
                        Paiement lancé sur votre téléphone
                     </p>
                   )}
-                  
+
                   <p className="text-[10px] text-zinc-400 mt-3 font-body text-center">
                     {paymentMethod === 'wave' 
                       ? 'Vous serez redirigé vers Wave pour compléter le paiement' 
@@ -362,7 +365,7 @@ export default function CheckoutWhatsApp() {
 
                 <div>
                   <h3 className="text-sm font-bold tracking-tight uppercase mb-4 font-headline">2. Preuve de paiement *</h3>
-                  
+
                   {!screenshot ? (
                     <div 
                       className="relative border-2 border-dashed border-zinc-300 hover:border-primary/60 transition-colors bg-white p-6 flex flex-col items-center justify-center text-center cursor-pointer group"
@@ -423,7 +426,7 @@ export default function CheckoutWhatsApp() {
               <ShoppingBag className="w-5 h-5" />
               Récapitulatif
             </h2>
-            
+
             <div className="space-y-4">
               {cartItems.map(item => (
                 <div key={item.id} className="bg-zinc-50 p-4 flex gap-4">
@@ -455,10 +458,14 @@ export default function CheckoutWhatsApp() {
               ))}
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-zinc-200">
+            <div className="space-y-2 pt-4 border-t border-zinc-200">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase font-body">Sous-total</span>
-                <span className="text-sm font-bold tracking-tight font-headline">{cartTotal.toLocaleString('fr-FR')} FCFA</span>
+                <span className="text-sm font-bold tracking-tight font-headline">{cartSubtotal.toLocaleString('fr-FR')} FCFA</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-bold text-zinc-500 tracking-widest uppercase font-body">Livraison</span>
+                <span className="text-sm font-bold tracking-tight font-headline">{cartShipping.toLocaleString('fr-FR')} FCFA</span>
               </div>
               <div className="flex justify-between items-center pt-4 border-t border-primary/5">
                 <span className="text-xs font-black tracking-widest uppercase font-headline">Total</span>
