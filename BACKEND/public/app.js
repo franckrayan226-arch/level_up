@@ -1,15 +1,13 @@
-// ============================================
-// MONOLITH EDITORIAL — DASHBOARD LOGIC
-// ============================================
 
 const API_BASE = '';
 
 let currentProduits = [];
 let deleteTargetId = null;
 let authPassword = localStorage.getItem('monolith_auth') || '';
-let colorBlocks = []; // {id, name, files: [], previews: []}
+let colorBlocks = [];
 let selectedSizes = new Set();
-let disponibiliteData = []; // {taille, couleur, disponible}[]
+let disponibiliteData = [];
+let editingProductId = null;
 
 // ============================================
 // AUTH
@@ -40,7 +38,7 @@ function doLogin() {
     }
   })
   .catch(() => {
-    error.textContent = 'Erreur de connexion — verifiez que le serveur est lance';
+    error.textContent = 'Erreur de connexion';
   });
 }
 
@@ -71,7 +69,11 @@ function showSection(section) {
 
   if (section === 'overview') loadStats();
   if (section === 'produits') loadProduits();
-  if (section === 'ajouter') { resetForm(); }
+  if (section === 'ajouter') {
+    if (!editingProductId) {
+      resetForm();
+    }
+  }
 }
 
 // ============================================
@@ -80,7 +82,6 @@ function showSection(section) {
 
 async function api(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
-  console.log('API call:', url);
 
   const res = await fetch(url, {
     ...options,
@@ -257,7 +258,7 @@ function renderProduits(produits) {
         </td>
         <td>
           <div class="table-actions">
-            <button class="btn-icon" onclick='editProduit(${JSON.stringify(p)})' title="Modifier">
+            <button class="btn-icon" onclick='editProduitHandler("${p.id}")' title="Modifier">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -308,6 +309,19 @@ async function toggleDisponible(id, current) {
   } catch (e) {
     toast('Erreur: ' + e.message, 'error');
   }
+}
+
+// ============================================
+// EDIT PRODUIT — FIX: use ID lookup instead of inline JSON
+// ============================================
+
+async function editProduitHandler(id) {
+  const p = currentProduits.find(prod => prod.id === id);
+  if (!p) {
+    toast('Produit non trouve', 'error');
+    return;
+  }
+  editProduit(p);
 }
 
 // ============================================
@@ -442,7 +456,6 @@ function setSizes(tailles) {
       selectedSizes.add(btn.dataset.size);
     }
   });
-  // Remove custom chips that are not in tailles
   document.querySelectorAll('.size-chip').forEach(btn => {
     if (!['S','M','L','XL','XXL','TU'].includes(btn.dataset.size)) {
       if (!tailles.includes(btn.dataset.size)) {
@@ -450,7 +463,6 @@ function setSizes(tailles) {
       }
     }
   });
-  // Add custom ones
   tailles.forEach(t => {
     if (!['S','M','L','XL','XXL','TU'].includes(t) && !selectedSizes.has(t)) {
       const container = document.getElementById('sizes-container');
@@ -503,16 +515,14 @@ function addColorBlock(existing = null) {
   const blockData = { id: blockId, name: colorName, files: [], previews: [] };
   colorBlocks.push(blockData);
 
-  // If editing, add existing image previews
   if (existingImages.length) {
-    existingImages.forEach((imgUrl, idx) => {
+    existingImages.forEach((imgUrl) => {
       const fullUrl = imgUrl.startsWith('http') ? imgUrl : `${API_BASE}${imgUrl}`;
       blockData.previews.push({ url: fullUrl, isExisting: true, serverUrl: imgUrl });
     });
     renderColorPreview(blockId);
   }
 
-  // Listen for name changes to update matrix
   const nameInput = block.querySelector('.color-name-input');
   if (nameInput) {
     nameInput.addEventListener('input', () => {
@@ -564,7 +574,6 @@ function removeColorImage(blockId, idx) {
   const block = colorBlocks.find(b => b.id === blockId);
   if (!block) return;
   block.previews.splice(idx, 1);
-  // Also remove from files if it was a new file
   let fileIdx = 0;
   for (let i = 0; i < block.previews.length + 1; i++) {
     if (i < idx && !block.previews[i]?.isExisting) fileIdx++;
@@ -590,10 +599,12 @@ function clearColorBlocks() {
 }
 
 // ============================================
-// FORM
+// FORM — FIXED: proper edit mode tracking
 // ============================================
 
 function editProduit(p) {
+  editingProductId = p.id;
+  
   document.getElementById('edit-id').value = p.id;
   document.getElementById('form-nom').value = p.nom || '';
   document.getElementById('form-prix').value = p.prix || '';
@@ -603,16 +614,13 @@ function editProduit(p) {
   document.getElementById('form-disponible').checked = p.disponible !== false;
   document.getElementById('form-description').value = p.description || '';
 
-  // Tailles
   setSizes(p.tailles || []);
 
-  // Couleurs
   clearColorBlocks();
   if (p.couleurs && p.couleurs.length) {
     p.couleurs.forEach(c => addColorBlock(c));
   }
 
-  // Disponibilite
   setDisponibiliteData(p.disponibilite || []);
   renderDisponibiliteMatrix();
 
@@ -633,6 +641,8 @@ function editProduit(p) {
 }
 
 function resetForm() {
+  editingProductId = null;
+  
   document.getElementById('produit-form').reset();
   document.getElementById('edit-id').value = '';
   document.getElementById('form-title').textContent = 'NOUVEAU PRODUIT';
@@ -643,7 +653,6 @@ function resetForm() {
   document.getElementById('btn-remove-img').classList.add('hidden');
   document.getElementById('form-image').value = '';
 
-  // Reset tailles
   selectedSizes.clear();
   document.querySelectorAll('.size-chip').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.size-chip').forEach(btn => {
@@ -651,10 +660,8 @@ function resetForm() {
   });
   updateSizesInput();
 
-  // Reset couleurs
   clearColorBlocks();
   
-  // Reset disponibilite
   disponibiliteData = [];
   renderDisponibiliteMatrix();
 }
@@ -694,18 +701,14 @@ async function submitProduit(e) {
   formData.append('disponible', document.getElementById('form-disponible').checked);
   formData.append('description', document.getElementById('form-description').value);
 
-  // Tailles
   const tailles = [...selectedSizes];
   formData.append('tailles', JSON.stringify(tailles));
 
-  // Image principale
   const imageFile = document.getElementById('form-image').files[0];
   if (imageFile) formData.append('image', imageFile);
 
-  // Couleurs: d'abord upload les nouvelles images, puis construire le JSON
   const colorsData = getColorsData();
 
-  // Upload new color images first
   for (let i = 0; i < colorBlocks.length; i++) {
     const block = colorBlocks[i];
     const newPreviews = block.previews.filter(p => !p.isExisting);
@@ -733,8 +736,6 @@ async function submitProduit(e) {
   }
 
   formData.append('couleurs', JSON.stringify(colorsData));
-  
-  // Disponibilite par taille & couleur
   formData.append('disponibilite', JSON.stringify(getDisponibiliteData()));
 
   try {
@@ -818,7 +819,6 @@ document.getElementById('password-input').addEventListener('keypress', e => {
   if (e.key === 'Enter') doLogin();
 });
 
-// Auto-login
 if (authPassword) {
   fetch(`${API_BASE}/api/admin/stats`, {
     headers: { 'X-Admin-Password': authPassword }
@@ -828,6 +828,6 @@ if (authPassword) {
     else logout();
   })
   .catch(() => {
-    document.getElementById('login-error').textContent = 'Serveur non disponible — lancez "npm start" dans le dossier backend';
+    document.getElementById('login-error').textContent = 'Serveur non disponible';
   });
 }

@@ -1774,3 +1774,108 @@ body {
   font-size: 10px;
   font-weight: 700;
 }
+
+
+
+/* === DISPONIBILITE MATRIX === */
+.dispo-matrix {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  overflow-x: auto;
+}
+
+.dispo-matrix-header {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.dispo-matrix-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.dispo-matrix-row:last-child {
+  border-bottom: none;
+}
+
+.dispo-cell {
+  min-width: 80px;
+  flex: 1;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--border);
+}
+
+.dispo-cell.empty {
+  min-width: 60px;
+  flex: 0 0 60px;
+  background: var(--bg-elevated);
+}
+
+.dispo-cell.header {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.dispo-cell.row-header {
+  min-width: 60px;
+  flex: 0 0 60px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+}
+
+.dispo-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dispo-checkbox input {
+  display: none;
+}
+
+.dispo-check {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.dispo-checkbox input:checked + .dispo-check {
+  background: var(--success-dim);
+  border-color: var(--success);
+}
+
+.dispo-checkbox input:checked + .dispo-check::after {
+  content: '✓';
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dispo-checkbox input:not(:checked) + .dispo-check {
+  background: var(--danger-dim);
+  border-color: var(--danger);
+}
+
+.dispo-checkbox input:not(:checked) + .dispo-check::after {
+  content: '✕';
+  color: var(--danger);
+  font-size: 10px;
+  font-weight: 700;
+}

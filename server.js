@@ -1,4 +1,5 @@
-const express = require('express');
+
+
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
@@ -10,26 +11,21 @@ const cloudinary = require('cloudinary').v2;
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// ═══════════════════════════════════════════
 // CLOUDINARY
-// ═══════════════════════════════════════════
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// ═══════════════════════════════════════════
 // MONGODB
-// ═══════════════════════════════════════════
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri || 'mongodb://localhost:27017');
 let db;
 
 async function initDB() {
   if (!uri) {
-    console.error(' ERREUR: MONGODB_URI est manquant ou vide dans les variables d\'environnement');
-    console.error('   Verifiez Render > Environment');
+    console.error("ERREUR: MONGODB_URI est manquant");
     process.exit(1);
   }
   await client.connect();
@@ -42,12 +38,10 @@ async function initDB() {
       parametres: { nomBoutique: 'MONOLITH', devise: 'FCFA', fraisLivraison: 1000 }
     });
   }
-  console.log(' MongoDB connecte');
+  console.log('MongoDB connecte');
 }
 
-// ═══════════════════════════════════════════
 // MIDDLEWARES
-// ═══════════════════════════════════════════
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -56,16 +50,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ═══════════════════════════════════════════
-// MULTER — MEMORY STORAGE (pas de fichiers sur disque)
-// ═══════════════════════════════════════════
+// MULTER
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const colorUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const paymentUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
-// ═══════════════════════════════════════════
 // HELPERS
-// ═══════════════════════════════════════════
 function uploadToCloudinary(buffer, folder) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -103,9 +93,7 @@ function parseDisponibilite(body) {
   } catch { return []; }
 }
 
-// ═══════════════════════════════════════════
 // AUTH
-// ═══════════════════════════════════════════
 const ADMIN_PASSWORD = process.env.MOT_DE_PASSE_ADMIN || 'test1234';
 
 function checkAuth(req, res, next) {
@@ -116,15 +104,10 @@ function checkAuth(req, res, next) {
   next();
 }
 
-// ═══════════════════════════════════════════
-// FICHIERS STATIQUES (UPLOADS D'ABORD)
-// ═══════════════════════════════════════════
+// FICHIERS STATIQUES
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ═══════════════════════════════════════════
-// API PUBLIQUE (AVANT le catch-all !)
-// ═══════════════════════════════════════════
-
+// API PUBLIQUE
 app.get('/api/produits', async (req, res) => {
   const produits = await db.collection('produits').find({ disponible: { $ne: false } }).toArray();
   res.json(produits);
@@ -141,10 +124,7 @@ app.get('/api/categories', async (req, res) => {
   res.json(config?.categories || []);
 });
 
-// ═══════════════════════════════════════════
 // API ADMIN
-// ═══════════════════════════════════════════
-
 app.get('/api/admin/stats', checkAuth, async (req, res) => {
   const total = await db.collection('produits').countDocuments();
   const dispo = await db.collection('produits').countDocuments({ disponible: { $ne: false } });
@@ -244,50 +224,39 @@ app.post('/api/upload-payment', paymentUpload.single('screenshot'), async (req, 
     return res.status(400).json({ error: 'Aucun fichier' });
   }
   const url = await uploadToCloudinary(req.file.buffer, 'monolith/payments');
-  res.json({
-    url: url,
-    filename: req.file.originalname
-  });
+  res.json({ url: url, filename: req.file.originalname });
 });
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ═══════════════════════════════════════════
 // DASHBOARD ADMIN
-// ═══════════════════════════════════════════
 app.use('/admin', express.static(path.join(__dirname, 'BACKEND', 'public')));
 app.get('/admin', (req, res) => res.redirect('/admin/'));
 app.get('/admin/', (req, res) => {
   res.sendFile(path.join(__dirname, 'BACKEND', 'public', 'index.html'));
 });
 
-// ═══════════════════════════════════════════
 // FRONTEND REACT (CATCH-ALL TOUJOURS EN DERNIER)
-// ═══════════════════════════════════════════
 app.use(express.static(path.join(__dirname, 'FRONTEND', 'dist')));
 
-// Catch-all: renvoie index.html UNIQUEMENT si ce n'est pas une route API
 app.get('*', (req, res) => {
-  // Si l'URL commence par /api, c'est une 404 API
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Route API non trouvee' });
   }
-  // Sinon c'est une route React
   res.sendFile(path.join(__dirname, 'FRONTEND', 'dist', 'index.html'));
 });
 
-// ═══════════════════════════════════════════
 // START
-// ═══════════════════════════════════════════
 async function start() {
   await initDB();
   app.listen(PORT, () => {
-    console.log(` Serveur sur le port ${PORT}`);
+    console.log(`Serveur sur le port ${PORT}`);
     console.log(`Site: http://localhost:${PORT}`);
-    console.log(` Admin: http://localhost:${PORT}/admin/`);
+    console.log(`Admin: http://localhost:${PORT}/admin/`);
   });
 }
 
 start();
+

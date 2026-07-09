@@ -16,9 +16,6 @@ export interface Product {
   categorie?: string;
 }
 
-// ============================================
-// DONNÉES DE FALLBACK (affichage immédiat)
-// ============================================
 const fallbackProducts: Product[] = [
   {
     id: '1',
@@ -74,19 +71,10 @@ const fallbackProducts: Product[] = [
   }
 ];
 
-// ============================================
-// CACHE
-// ============================================
 let cachedProducts: Product[] | null = null;
 
-// ============================================
-// EXPORT SYNCHRONE (pour l'ancien code)
-// ============================================
 export const products = fallbackProducts;
 
-// ============================================
-// FONCTIONS ASYNCHRONES
-// ============================================
 export async function getProducts(): Promise<Product[]> {
   try {
     const produits = await fetchProducts();
@@ -116,7 +104,7 @@ export async function getProducts(): Promise<Product[]> {
     return mappedProducts;
 
   } catch (e) {
-    console.warn('Backend offline, fallback aux données locales:', e);
+    console.warn('Backend offline, fallback aux donnees locales:', e);
     return fallbackProducts;
   }
 }

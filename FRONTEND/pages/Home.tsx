@@ -19,7 +19,6 @@ export default function Home() {
 
   return (
     <div className="pt-20 pb-24">
-      {/* Hero */}
       <section className="relative h-[80vh] min-h-[550px] md:min-h-[750px] w-full overflow-hidden bg-[#E2E2E2] flex flex-col items-center justify-center">
         <div className="absolute inset-0 w-full h-full max-w-7xl mx-auto px-0 md:px-6">
           <img 
@@ -31,13 +30,12 @@ export default function Home() {
         <div className="relative z-10 w-full h-full max-w-7xl mx-auto flex flex-col justify-end items-center px-4 sm:px-6 pb-10 md:pb-16 pointer-events-none">
           <div className="flex flex-col items-center mt-auto w-full pointer-events-auto">
             <Link to="/shop" className="bg-transparent border border-black text-black font-headline font-bold text-[10px] sm:text-xs md:text-sm px-10 sm:px-12 md:px-16 py-3 sm:py-4 md:py-5 tracking-[0.2em] hover:bg-black hover:text-white active:bg-zinc-800 transition-all duration-300 uppercase w-fit backdrop-blur-sm sm:backdrop-blur-[2px]">
-              Découvrir la Boutique
+              Decouvrir la Boutique
             </Link>
           </div>
         </div>
       </section>
 
-      {/* New Arrivals */}
       <section className="py-16 md:py-20 bg-surface">
         <div className="px-4 md:px-6 mb-12 md:mb-16 flex justify-between items-end">
           <div>
@@ -85,7 +83,7 @@ export default function Home() {
                         </p>
                         {hasRestricted && (
                           <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limité
+                            Stock limite
                           </p>
                         )}
                       </div>
@@ -127,7 +125,7 @@ export default function Home() {
                         </p>
                         {hasRestricted && (
                           <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limité
+                            Stock limite
                           </p>
                         )}
                       </div>
@@ -169,7 +167,7 @@ export default function Home() {
                         </p>
                         {hasRestricted && (
                           <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limité
+                            Stock limite
                           </p>
                         )}
                       </div>
@@ -211,7 +209,7 @@ export default function Home() {
                         </p>
                         {hasRestricted && (
                           <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limité
+                            Stock limite
                           </p>
                         )}
                       </div>
@@ -224,7 +222,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* Newsletter */}
       <section className="py-32 px-6 flex flex-col items-center text-center bg-surface">
         <h5 className="font-label text-xs tracking-[0.5em] text-outline mb-6 uppercase">Stay Informed</h5>
         <h2 className="font-headline font-black text-4xl md:text-6xl tracking-tighter uppercase max-w-2xl mb-10 leading-none">

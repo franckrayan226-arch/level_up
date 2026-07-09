@@ -16,6 +16,8 @@ interface PaymentInfo {
   bgColor: string;
 }
 
+const MERCHANT_PHONE = '63293139';
+
 const PAYMENT_METHODS: Record<PaymentMethod, PaymentInfo> = {
   orange: {
     method: 'orange',
@@ -49,7 +51,6 @@ const PAYMENT_METHODS: Record<PaymentMethod, PaymentInfo> = {
 export default function CheckoutWhatsApp() {
   const { cartItems, cartTotal, cartSubtotal, cartShipping, removeFromCart, updateQuantity } = useCart();
 
-  // Formulaire client
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -57,7 +58,6 @@ export default function CheckoutWhatsApp() {
   const [locationError, setLocationError] = useState('');
   const [coordinates, setCoordinates] = useState<{lat: number, lon: number} | null>(null);
 
-  // Paiement
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('orange');
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -67,10 +67,9 @@ export default function CheckoutWhatsApp() {
   const [paymentInitiated, setPaymentInitiated] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Récupérer la position GPS
   const getLocation = () => {
     if (!navigator.geolocation) {
-      setLocationError('La géolocalisation n\'est pas supportée par votre navigateur');
+      setLocationError('La geolocalisation n\'est pas supportee par votre navigateur');
       return;
     }
 
@@ -100,21 +99,22 @@ export default function CheckoutWhatsApp() {
     );
   };
 
-  // Lancer le paiement automatique
   const initiatePayment = () => {
-    const method = PAYMENT_METHODS[paymentMethod];
+    const amount = cartTotal;
 
     if (paymentMethod === 'wave') {
-      window.open(`https://wave.com/send?amount=${cartTotal}&phone=22663293139`, '_blank');
-    } else {
-      const ussdCode = method.ussdCode;
+      window.open(`https://wave.com/send?amount=${amount}&phone=${MERCHANT_PHONE}`, '_blank');
+    } else if (paymentMethod === 'orange') {
+      const ussdCode = `*144*10*${MERCHANT_PHONE}*${amount}#`;
+      window.location.href = `tel:${ussdCode}`;
+    } else if (paymentMethod === 'moov') {
+      const ussdCode = `*555*2*1*${MERCHANT_PHONE}*${amount}#`;
       window.location.href = `tel:${ussdCode}`;
     }
 
     setPaymentInitiated(true);
   };
 
-  // Upload screenshot vers le backend
   const uploadScreenshot = async (file: File): Promise<string | null> => {
     const formData = new FormData();
     formData.append('screenshot', file);
@@ -133,7 +133,6 @@ export default function CheckoutWhatsApp() {
     }
   };
 
-  // Gérer le fichier sélectionné
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -156,7 +155,6 @@ export default function CheckoutWhatsApp() {
     setUploadedImageUrl(null);
   };
 
-  // Envoyer la commande WhatsApp
   const sendOrder = async () => {
     if (!fullName.trim() || !phone.trim() || !address.trim()) {
       alert('Veuillez remplir tous les champs obligatoires');
@@ -178,26 +176,26 @@ export default function CheckoutWhatsApp() {
 
     const method = PAYMENT_METHODS[paymentMethod];
 
-    let message = `🛒 *NOUVELLE COMMANDE - MONOLITH*\n\n`;
-    message += `*Client:* ${fullName}\n`;
-    message += `*Téléphone:* ${phone}\n`;
-    message += `*Adresse:* ${address}\n`;
+    let message = `NOUVELLE COMMANDE - MONOLITH\\n\\n`;
+    message += `Client: ${fullName}\\n`;
+    message += `Telephone: ${phone}\\n`;
+    message += `Adresse: ${address}\\n`;
     if (coordinates) {
-      message += `*GPS:* https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}\n`;
+      message += `GPS: https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}\\n`;
     }
-    message += `\n*Produits:*\n`;
+    message += `\\nProduits:\\n`;
 
     cartItems.forEach(item => {
-      message += `- ${item.quantity}x ${item.name} (${item.size}, ${item.color}) = ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\n`;
+      message += `- ${item.quantity}x ${item.name} (${item.size}, ${item.color}) = ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\\n`;
     });
 
-    message += `\n*Sous-total:* ${cartSubtotal.toLocaleString('fr-FR')} FCFA\n`;
-    message += `*Livraison:* ${cartShipping.toLocaleString('fr-FR')} FCFA\n`;
-    message += `*Total:* ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
-    message += `*Paiement:* ${method.name}\n`;
+    message += `\\nSous-total: ${cartSubtotal.toLocaleString('fr-FR')} FCFA\\n`;
+    message += `Livraison: ${cartShipping.toLocaleString('fr-FR')} FCFA\\n`;
+    message += `Total: ${cartTotal.toLocaleString('fr-FR')} FCFA\\n`;
+    message += `Paiement: ${method.name}\\n`;
 
     if (imageUrl) {
-      message += `\n📎 *Preuve de paiement:* ${window.location.origin}${imageUrl}`;
+      message += `\\nPreuve de paiement: ${window.location.origin}${imageUrl}`;
     }
 
     const encodedMessage = encodeURIComponent(message);
@@ -226,10 +224,8 @@ export default function CheckoutWhatsApp() {
       <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9] font-headline mb-12">CHECKOUT</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
-        {/* Left: Formulaire */}
         <div className="lg:col-span-7 space-y-12">
 
-          {/* Informations client */}
           <section>
             <h2 className="text-xl font-extrabold tracking-tighter uppercase mb-8 flex items-center gap-2 font-headline">
               <MapPin className="w-5 h-5" />
@@ -250,7 +246,7 @@ export default function CheckoutWhatsApp() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold tracking-widest uppercase text-zinc-500 mb-2 font-body">Téléphone *</label>
+                <label className="block text-[10px] font-bold tracking-widest uppercase text-zinc-500 mb-2 font-body">Telephone *</label>
                 <input 
                   type="tel" 
                   value={phone}
@@ -287,14 +283,13 @@ export default function CheckoutWhatsApp() {
                 )}
                 {coordinates && (
                   <p className="text-[10px] text-green-600 mt-2 font-body">
-                     Position GPS récupérée
+                     Position GPS recuperee
                   </p>
                 )}
               </div>
             </div>
           </section>
 
-          {/* Paiement */}
           <section>
             <h2 className="text-xl font-extrabold tracking-tighter uppercase mb-6 flex items-center gap-2 font-headline">
               <CreditCard className="w-5 h-5" />
@@ -302,7 +297,6 @@ export default function CheckoutWhatsApp() {
             </h2>
 
             <div className="space-y-4">
-              {/* Sélection méthode */}
               <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
@@ -327,16 +321,14 @@ export default function CheckoutWhatsApp() {
                 </button>
               </div>
 
-              {/* Instructions + bouton paiement auto */}
               <div className="bg-zinc-50 border border-zinc-200 p-6 space-y-4">
                 <div>
                   <h3 className="text-sm font-bold tracking-tight uppercase mb-2 font-headline">1. Effectuez le paiement</h3>
                   <p className="text-xs text-zinc-500 font-body mb-4">
-                    Montant à payer: <strong className="text-primary" style={{ color: currentMethod.color }}>{cartTotal.toLocaleString('fr-FR')} FCFA</strong>
+                    Montant a payer: <strong className="text-primary" style={{ color: currentMethod.color }}>{cartTotal.toLocaleString('fr-FR')} FCFA</strong>
                     <span className="block text-[10px] text-zinc-400 mt-1">(produits + livraison 1000 FCFA)</span>
                   </p>
 
-                  {/* Bouton lancer paiement */}
                   <button
                     onClick={initiatePayment}
                     className="w-full py-4 px-6 font-bold tracking-widest uppercase flex items-center justify-center gap-3 transition-all duration-300 hover:opacity-90 text-white"
@@ -350,14 +342,14 @@ export default function CheckoutWhatsApp() {
 
                   {paymentInitiated && (
                     <p className="text-[10px] text-green-600 mt-2 font-body text-center">
-                       Paiement lancé sur votre téléphone
+                       Paiement lance sur votre telephone
                     </p>
                   )}
 
                   <p className="text-[10px] text-zinc-400 mt-3 font-body text-center">
                     {paymentMethod === 'wave' 
-                      ? 'Vous serez redirigé vers Wave pour compléter le paiement' 
-                      : 'Le code USSD va s\'ouvrir sur votre téléphone. Suivez les instructions.'}
+                      ? 'Vous serez redirige vers Wave pour completer le paiement' 
+                      : 'Le code USSD va s\'ouvrir sur votre telephone. Suivez les instructions.'}
                   </p>
                 </div>
 
@@ -378,18 +370,18 @@ export default function CheckoutWhatsApp() {
                       />
                       <UploadCloud className="w-8 h-8 text-zinc-400 group-hover:text-primary transition-colors mb-2" />
                       <p className="text-xs font-bold uppercase tracking-widest font-headline">Cliquez pour importer</p>
-                      <p className="text-[10px] text-zinc-400 font-body mt-1">Capture d'écran du reçu</p>
+                      <p className="text-[10px] text-zinc-400 font-body mt-1">Capture d'ecran du recu</p>
                     </div>
                   ) : (
                     <div className="relative border border-primary/30 bg-white p-2 flex items-center justify-between">
                       <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-10 h-10 bg-zinc-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                          <img src={screenshot} alt="Reçu" className="w-full h-full object-cover" />
+                          <img src={screenshot} alt="Recu" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-xs font-medium font-body truncate">Capture d'écran</span>
+                          <span className="text-xs font-medium font-body truncate">Capture d'ecran</span>
                           {isUploading && <span className="text-[10px] text-primary">Upload en cours...</span>}
-                          {uploadedImageUrl && <span className="text-[10px] text-green-600"> Uploadé</span>}
+                          {uploadedImageUrl && <span className="text-[10px] text-green-600"> Uploade</span>}
                         </div>
                       </div>
                       <button 
@@ -406,7 +398,6 @@ export default function CheckoutWhatsApp() {
             </div>
           </section>
 
-          {/* Bouton commander */}
           <button 
             onClick={sendOrder}
             disabled={isSubmitting || isUploading || !uploadedImageUrl}
@@ -417,12 +408,11 @@ export default function CheckoutWhatsApp() {
           </button>
         </div>
 
-        {/* Right: Récapitulatif */}
         <div className="lg:col-span-5">
           <div className="lg:sticky lg:top-32 space-y-8">
             <h2 className="text-xl font-extrabold tracking-tighter uppercase flex items-center gap-2 font-headline">
               <ShoppingBag className="w-5 h-5" />
-              Récapitulatif
+              Recapitulatif
             </h2>
 
             <div className="space-y-4">

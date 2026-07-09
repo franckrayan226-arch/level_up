@@ -48,8 +48,8 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <div className="pt-20 pb-24 px-6 text-center">
-        <p className="text-red-500">Produit non trouvé</p>
-        <Link to="/shop" className="text-primary underline mt-4 inline-block">Retour à la boutique</Link>
+        <p className="text-red-500">Produit non trouve</p>
+        <Link to="/shop" className="text-primary underline mt-4 inline-block">Retour a la boutique</Link>
       </div>
     );
   }
@@ -98,7 +98,6 @@ export default function ProductDetail() {
   return (
     <div className="pt-20 pb-24 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-        {/* Images */}
         <div className="lg:col-span-7 bg-white relative">
           <div className="aspect-[3/4] md:aspect-auto md:h-[calc(100vh-80px)] overflow-hidden relative">
             <img 
@@ -126,7 +125,6 @@ export default function ProductDetail() {
           )}
         </div>
 
-        {/* Details */}
         <div className="lg:col-span-5 px-6 py-12 lg:px-16 lg:py-20 flex flex-col justify-between">
           <div>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -162,7 +160,6 @@ export default function ProductDetail() {
             </p>
 
             <div className="space-y-12">
-              {/* Color Selector */}
               {product.couleurs && product.couleurs.length > 0 && (
                 <div>
                   <span className="font-headline font-extrabold text-xs tracking-widest uppercase mb-4 block">SELECT COLOR</span>
@@ -188,7 +185,6 @@ export default function ProductDetail() {
                 </div>
               )}
 
-              {/* Size Selector */}
               {product.tailles && product.tailles.length > 0 && (
                 <div>
                   <div className="flex justify-between items-end mb-4">
