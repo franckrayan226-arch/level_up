@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, Zap } from 'lucide-react';
-import { fetchProduct, getImageUrl, type ApiProduct } from '../api';
+import { fetchProduct, getImageUrl, isCombinationAvailable, type ApiProduct } from '../api';
 import { useCart } from '../context/CartContext';
 import { BrandLogo } from '../components/BrandLogo';
 
@@ -58,6 +58,11 @@ export default function ProductDetail() {
     if (!selectedSize) { alert('Veuillez choisir une taille'); return; }
     if (!selectedColor) { alert('Veuillez choisir une couleur'); return; }
 
+    if (!isCombinationAvailable(product, selectedSize, selectedColor)) {
+      alert('Cette combinaison taille/couleur est actuellement indisponible');
+      return;
+    }
+
     const prixFinal = product.promotion > 0 
       ? Math.round(product.prix * (1 - product.promotion/100))
       : product.prix;
@@ -85,6 +90,10 @@ export default function ProductDetail() {
   const mainImage = colorImages.length > 0 
     ? getImageUrl(colorImages[currentImageIndex])
     : getImageUrl(product.image);
+
+  const comboAvailable = selectedSize && selectedColor 
+    ? isCombinationAvailable(product, selectedSize, selectedColor) 
+    : true;
 
   return (
     <div className="pt-20 pb-24 max-w-7xl mx-auto">
@@ -200,6 +209,11 @@ export default function ProductDetail() {
                       </button>
                     ))}
                   </div>
+                  {!comboAvailable && selectedSize && selectedColor && (
+                    <p className="text-[10px] text-red-500 mt-3 font-body font-bold tracking-widest uppercase">
+                      INDISPONIBLE EN {selectedSize} / {selectedColor}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -208,10 +222,10 @@ export default function ProductDetail() {
           <div className="mt-16">
             <button 
               onClick={handleAddToCart}
-              disabled={!product.disponible}
+              disabled={!product.disponible || !comboAvailable}
               className="w-full bg-black text-white h-20 font-headline font-black text-xl tracking-tighter uppercase flex items-center justify-center gap-4 hover:bg-zinc-800 transition-colors active:scale-[0.98] duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {product.disponible ? 'ADD TO COMMANDER' : 'INDISPONIBLE'}
+              {!product.disponible ? 'INDISPONIBLE' : !comboAvailable ? 'COMBINAISON INDISPONIBLE' : 'ADD TO COMMANDER'}
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

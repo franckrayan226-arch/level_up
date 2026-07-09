@@ -3,6 +3,12 @@ const API_BASE = window.location.hostname === 'localhost'
   ? 'http://localhost:8080/api' 
   : '/api';
 
+export interface DisponibiliteItem {
+  taille: string;
+  couleur: string;
+  disponible: boolean;
+}
+
 export interface ApiProduct {
   id: string;
   nom: string;
@@ -13,6 +19,7 @@ export interface ApiProduct {
   promotion: number;
   stock: number;
   disponible: boolean;
+  disponibilite?: DisponibiliteItem[];
   image: string | null;
   tailles: string[];
   couleurs: { nom: string; images: string[] }[];
@@ -42,4 +49,17 @@ export function getImageUrl(image: string | null): string {
   if (image.startsWith('http')) return image;
   const base = API_BASE.replace('/api', '');
   return `${base}${image}`;
+}
+
+export function isCombinationAvailable(
+  product: ApiProduct,
+  taille: string,
+  couleur: string
+): boolean {
+  if (!product.disponible) return false;
+  if (!product.disponibilite || product.disponibilite.length === 0) return true;
+  const item = product.disponibilite.find(
+    d => d.taille === taille && d.couleur === couleur
+  );
+  return item ? item.disponible : true;
 }

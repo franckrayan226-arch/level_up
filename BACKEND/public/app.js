@@ -9,6 +9,7 @@ let deleteTargetId = null;
 let authPassword = localStorage.getItem('monolith_auth') || '';
 let colorBlocks = []; // {id, name, files: [], previews: []}
 let selectedSizes = new Set();
+let disponibiliteData = []; // {taille, couleur, disponible}[]
 
 // ============================================
 // AUTH
@@ -160,6 +161,7 @@ function renderRecents(produits) {
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
     const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
     const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
+    const dispoCount = p.disponibilite ? p.disponibilite.filter(d => d.disponible).length : (p.tailles?.length || 0) * (p.couleurs?.length || 0);
 
     return `
       <div class="recent-item">
@@ -174,6 +176,7 @@ function renderRecents(produits) {
         <div class="prix-final">Total: ${prixAvecLivraison} FCFA (livraison incluse)</div>
         ${taillesStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:1px">${escapeHtml(taillesStr)}</div>` : ''}
         ${couleursStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;letter-spacing:1px">${escapeHtml(couleursStr)}</div>` : ''}
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${dispoCount} combinaisons dispo</div>
         <div class="recent-item-status ${p.disponible !== false ? 'status-dispo' : 'status-rupture'}">
           ${p.disponible !== false ? 'EN LIGNE' : 'RUPTURE'}
         </div>
@@ -223,6 +226,8 @@ function renderProduits(produits) {
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
     const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
     const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
+    const dispoCount = p.disponibilite ? p.disponibilite.filter(d => d.disponible).length : (p.tailles?.length || 0) * (p.couleurs?.length || 0);
+    const totalComb = (p.tailles?.length || 0) * (p.couleurs?.length || 0);
 
     return `
       <tr>
@@ -234,6 +239,7 @@ function renderProduits(produits) {
           ${p.description ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">${escapeHtml(p.description.substring(0, 50))}...</div>` : ''}
           ${taillesStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:0.5px">Tailles: ${escapeHtml(taillesStr)}</div>` : ''}
           ${couleursStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;letter-spacing:0.5px">Couleurs: ${escapeHtml(couleursStr)}</div>` : ''}
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${dispoCount}/${totalComb} combinaisons</div>
         </td>
         <td><span class="table-cat">${escapeHtml(p.categorie) || '—'}</span></td>
         <td>
@@ -305,6 +311,86 @@ async function toggleDisponible(id, current) {
 }
 
 // ============================================
+// DISPONIBILITE MATRIX
+// ============================================
+
+function renderDisponibiliteMatrix() {
+  const container = document.getElementById('disponibilite-matrix-container');
+  if (!container) return;
+  
+  const tailles = [...selectedSizes];
+  const couleurs = colorBlocks.map(b => {
+    const input = document.querySelector(`#${b.id} .color-name-input`);
+    return input ? input.value.trim() : '';
+  }).filter(n => n);
+  
+  if (tailles.length === 0 || couleurs.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Ajoutez des tailles et des couleurs pour gerer la disponibilite.</p>';
+    return;
+  }
+  
+  let html = '<div class="dispo-matrix"><div class="dispo-matrix-header"><div class="dispo-cell empty"></div>';
+  couleurs.forEach(c => {
+    html += `<div class="dispo-cell header">${escapeHtml(c)}</div>`;
+  });
+  html += '</div>';
+  
+  tailles.forEach(t => {
+    html += `<div class="dispo-matrix-row"><div class="dispo-cell row-header">${escapeHtml(t)}</div>`;
+    couleurs.forEach(c => {
+      const existing = disponibiliteData.find(d => d.taille === t && d.couleur === c);
+      const isChecked = existing ? existing.disponible : true;
+      const checkedAttr = isChecked ? 'checked' : '';
+      html += `
+        <div class="dispo-cell">
+          <label class="dispo-checkbox">
+            <input type="checkbox" onchange="toggleDisponibiliteCell('${escapeHtml(t)}', '${escapeHtml(c)}', this.checked)" ${checkedAttr}>
+            <span class="dispo-check"></span>
+          </label>
+        </div>
+      `;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function toggleDisponibiliteCell(taille, couleur, checked) {
+  const idx = disponibiliteData.findIndex(d => d.taille === taille && d.couleur === couleur);
+  if (idx >= 0) {
+    disponibiliteData[idx].disponible = checked;
+  } else {
+    disponibiliteData.push({ taille, couleur, disponible: checked });
+  }
+}
+
+function getDisponibiliteData() {
+  const tailles = [...selectedSizes];
+  const couleurs = colorBlocks.map(b => {
+    const input = document.querySelector(`#${b.id} .color-name-input`);
+    return input ? input.value.trim() : '';
+  }).filter(n => n);
+  
+  const result = [];
+  tailles.forEach(t => {
+    couleurs.forEach(c => {
+      const existing = disponibiliteData.find(d => d.taille === t && d.couleur === c);
+      result.push({
+        taille: t,
+        couleur: c,
+        disponible: existing ? existing.disponible : true
+      });
+    });
+  });
+  return result;
+}
+
+function setDisponibiliteData(data) {
+  disponibiliteData = Array.isArray(data) ? [...data] : [];
+}
+
+// ============================================
 // TAILLES
 // ============================================
 
@@ -318,6 +404,7 @@ function toggleSize(btn) {
     btn.classList.add('active');
   }
   updateSizesInput();
+  renderDisponibiliteMatrix();
 }
 
 function addCustomSize() {
@@ -326,7 +413,6 @@ function addCustomSize() {
   if (!val) return;
 
   const container = document.getElementById('sizes-container');
-  // Check if already exists
   if (selectedSizes.has(val)) { input.value = ''; return; }
 
   const btn = document.createElement('button');
@@ -340,6 +426,7 @@ function addCustomSize() {
   selectedSizes.add(val);
   updateSizesInput();
   input.value = '';
+  renderDisponibiliteMatrix();
 }
 
 function updateSizesInput() {
@@ -378,6 +465,7 @@ function setSizes(tailles) {
     }
   });
   updateSizesInput();
+  renderDisponibiliteMatrix();
 }
 
 // ============================================
@@ -423,12 +511,23 @@ function addColorBlock(existing = null) {
     });
     renderColorPreview(blockId);
   }
+
+  // Listen for name changes to update matrix
+  const nameInput = block.querySelector('.color-name-input');
+  if (nameInput) {
+    nameInput.addEventListener('input', () => {
+      renderDisponibiliteMatrix();
+    });
+  }
+  
+  renderDisponibiliteMatrix();
 }
 
 function removeColorBlock(blockId) {
   const el = document.getElementById(blockId);
   if (el) el.remove();
   colorBlocks = colorBlocks.filter(b => b.id !== blockId);
+  renderDisponibiliteMatrix();
 }
 
 function handleColorImages(input, blockId) {
@@ -513,6 +612,10 @@ function editProduit(p) {
     p.couleurs.forEach(c => addColorBlock(c));
   }
 
+  // Disponibilite
+  setDisponibiliteData(p.disponibilite || []);
+  renderDisponibiliteMatrix();
+
   document.getElementById('form-title').textContent = 'MODIFIER PRODUIT';
   document.getElementById('btn-submit').textContent = 'METTRE A JOUR';
 
@@ -550,6 +653,10 @@ function resetForm() {
 
   // Reset couleurs
   clearColorBlocks();
+  
+  // Reset disponibilite
+  disponibiliteData = [];
+  renderDisponibiliteMatrix();
 }
 
 function previewImage(input) {
@@ -626,6 +733,9 @@ async function submitProduit(e) {
   }
 
   formData.append('couleurs', JSON.stringify(colorsData));
+  
+  // Disponibilite par taille & couleur
+  formData.append('disponibilite', JSON.stringify(getDisponibiliteData()));
 
   try {
     const url = id ? `/api/admin/produits/${id}` : '/api/admin/produits';

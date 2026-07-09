@@ -65,9 +65,11 @@ export default function CartDrawer() {
           ) : (
             cartItems.map(item => {
               const product = products.find(p => p.id === item.productId);
+              const isAvailable = product?.disponible !== false && 
+                (!product?.disponibilite || product.disponibilite.find(d => d.taille === item.size && d.couleur === item.color)?.disponible !== false);
 
               return (
-                <div key={item.id} className="flex gap-4 bg-surface-container-lowest p-4 relative group">
+                <div key={item.id} className={`flex gap-4 bg-surface-container-lowest p-4 relative group ${!isAvailable ? 'opacity-60 border border-red-200' : ''}`}>
                   <button 
                     onClick={() => removeFromCart(item.id)} 
                     className="absolute top-2 right-2 text-zinc-300 hover:text-error transition-colors"
@@ -88,6 +90,9 @@ export default function CartDrawer() {
                     <div className="pr-6">
                       <h4 className="font-bold text-xs tracking-tight uppercase font-headline line-clamp-2">{item.name}</h4>
                       <p className="text-[10px] text-on-surface-variant tracking-widest uppercase mt-1 font-body">{item.color}</p>
+                      {!isAvailable && (
+                        <p className="text-[9px] text-red-500 font-bold tracking-wider uppercase mt-1">INDISPONIBLE</p>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between mt-4">

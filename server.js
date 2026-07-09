@@ -95,6 +95,14 @@ function parseTailles(body) {
   } catch { return []; }
 }
 
+function parseDisponibilite(body) {
+  try {
+    if (!body.disponibilite) return [];
+    const raw = typeof body.disponibilite === 'string' ? JSON.parse(body.disponibilite) : body.disponibilite;
+    return Array.isArray(raw) ? raw : [];
+  } catch { return []; }
+}
+
 // ═══════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════
@@ -166,6 +174,7 @@ app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, r
     promotion: parseFloat(req.body.promotion) || 0,
     stock: parseInt(req.body.stock) || 0,
     disponible: req.body.disponible === 'true' || req.body.disponible === true,
+    disponibilite: parseDisponibilite(req.body),
     image: imageUrl,
     tailles: parseTailles(req.body),
     couleurs: parseCouleurs(req.body),
@@ -193,6 +202,7 @@ app.put('/api/admin/produits/:id', checkAuth, upload.single('image'), async (req
     promotion: parseFloat(req.body.promotion) || 0,
     stock: parseInt(req.body.stock) || 0,
     disponible: req.body.disponible === 'true' || req.body.disponible === true,
+    disponibilite: parseDisponibilite(req.body),
     tailles: parseTailles(req.body),
     couleurs: parseCouleurs(req.body),
     livraison: 1000,

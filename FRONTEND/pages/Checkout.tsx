@@ -105,10 +105,8 @@ export default function CheckoutWhatsApp() {
     const method = PAYMENT_METHODS[paymentMethod];
 
     if (paymentMethod === 'wave') {
-      // Wave n'a pas de code USSD standard, on ouvre l'app ou le site
       window.open(`https://wave.com/send?amount=${cartTotal}&phone=22663293139`, '_blank');
     } else {
-      // Orange et Moov via USSD
       const ussdCode = method.ussdCode;
       window.location.href = `tel:${ussdCode}`;
     }

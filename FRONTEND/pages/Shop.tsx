@@ -51,6 +51,11 @@ export default function Shop() {
           const prixAvecLivraison = prixFinal + (product.livraison || 1000);
           const taillesStr = product.tailles?.join(' / ') || '';
           const couleursStr = product.couleurs?.map(c => c.nom).join(' / ') || '';
+          const hasRestrictedCombos = product.disponibilite && product.disponibilite.some(d => !d.disponible);
+          const dispoCount = product.disponibilite 
+            ? product.disponibilite.filter(d => d.disponible).length 
+            : (product.tailles?.length || 0) * (product.couleurs?.length || 0);
+          const totalComb = (product.tailles?.length || 0) * (product.couleurs?.length || 0);
 
           return (
             <Link to={`/product/${product.id}`} key={product.id} className="flex flex-col gap-4 group">
@@ -73,6 +78,11 @@ export default function Shop() {
                 <span className="font-body text-[9px] text-zinc-400 tracking-tighter">
                   + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
                 </span>
+                {hasRestrictedCombos && (
+                  <span className="font-body text-[9px] text-red-400 tracking-wider mt-1">
+                    {dispoCount}/{totalComb} combinaisons disponibles
+                  </span>
+                )}
                 {taillesStr && (
                   <span className="font-body text-[9px] text-zinc-400 tracking-wider mt-1">
                     Tailles: {taillesStr}

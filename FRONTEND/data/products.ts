@@ -12,6 +12,7 @@ export interface Product {
   promotion?: number;
   stock?: number;
   disponible?: boolean;
+  disponibilite?: { taille: string; couleur: string; disponible: boolean }[];
   categorie?: string;
 }
 
@@ -107,6 +108,7 @@ export async function getProducts(): Promise<Product[]> {
       promotion: p.promotion || 0,
       stock: p.stock || 0,
       disponible: p.disponible,
+      disponibilite: p.disponibilite || [],
       categorie: p.categorie
     }));
 
