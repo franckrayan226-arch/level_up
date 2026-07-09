@@ -1,4 +1,3 @@
-
 const API_BASE = '';
 
 let currentProduits = [];
@@ -325,7 +324,7 @@ async function editProduitHandler(id) {
 }
 
 // ============================================
-// DISPONIBILITE MATRIX
+// DISPONIBILITE MATRIX — CORRIGE
 // ============================================
 
 function renderDisponibiliteMatrix() {
@@ -355,10 +354,15 @@ function renderDisponibiliteMatrix() {
       const existing = disponibiliteData.find(d => d.taille === t && d.couleur === c);
       const isChecked = existing ? existing.disponible : true;
       const checkedAttr = isChecked ? 'checked' : '';
+      // CORRECTION: ajout de data attributes pour récupérer les valeurs au submit
       html += `
         <div class="dispo-cell">
           <label class="dispo-checkbox">
-            <input type="checkbox" onchange="toggleDisponibiliteCell('${escapeHtml(t)}', '${escapeHtml(c)}', this.checked)" ${checkedAttr}>
+            <input type="checkbox" 
+              data-taille="${escapeHtml(t)}" 
+              data-couleur="${escapeHtml(c)}" 
+              onchange="toggleDisponibiliteCell('${escapeHtml(t)}', '${escapeHtml(c)}', this.checked)" 
+              ${checkedAttr}>
             <span class="dispo-check"></span>
           </label>
         </div>
@@ -379,24 +383,38 @@ function toggleDisponibiliteCell(taille, couleur, checked) {
   }
 }
 
+// CORRECTION: lit les checkboxes du DOM au lieu de reconstruire
 function getDisponibiliteData() {
-  const tailles = [...selectedSizes];
-  const couleurs = colorBlocks.map(b => {
-    const input = document.querySelector(`#${b.id} .color-name-input`);
-    return input ? input.value.trim() : '';
-  }).filter(n => n);
-  
+  const checkboxes = document.querySelectorAll('#disponibilite-matrix-container input[type="checkbox"]');
   const result = [];
-  tailles.forEach(t => {
-    couleurs.forEach(c => {
-      const existing = disponibiliteData.find(d => d.taille === t && d.couleur === c);
+  
+  checkboxes.forEach(cb => {
+    const taille = cb.dataset.taille;
+    const couleur = cb.dataset.couleur;
+    if (taille && couleur) {
       result.push({
-        taille: t,
-        couleur: c,
-        disponible: existing ? existing.disponible : true
+        taille: taille,
+        couleur: couleur,
+        disponible: cb.checked
+      });
+    }
+  });
+  
+  // Si pas de checkboxes (matrice vide), fallback sur toutes dispo
+  if (result.length === 0) {
+    const tailles = [...selectedSizes];
+    const couleurs = colorBlocks.map(b => {
+      const input = document.querySelector(`#${b.id} .color-name-input`);
+      return input ? input.value.trim() : '';
+    }).filter(n => n);
+    
+    tailles.forEach(t => {
+      couleurs.forEach(c => {
+        result.push({ taille: t, couleur: c, disponible: true });
       });
     });
-  });
+  }
+  
   return result;
 }
 
@@ -736,6 +754,7 @@ async function submitProduit(e) {
   }
 
   formData.append('couleurs', JSON.stringify(colorsData));
+  // CORRECTION: utilise getDisponibiliteData() qui lit les checkboxes du DOM
   formData.append('disponibilite', JSON.stringify(getDisponibiliteData()));
 
   try {

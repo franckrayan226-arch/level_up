@@ -103,15 +103,23 @@ export default function CheckoutWhatsApp() {
     const amount = cartTotal;
 
     if (paymentMethod === 'wave') {
-      window.open(`https://wave.com/send?amount=${amount}&phone=${MERCHANT_PHONE}`, '_blank');
-    } else if (paymentMethod === 'orange') {
-      const ussdCode = `*144*10*${MERCHANT_PHONE}*${amount}#`;
-      window.location.href = `tel:${ussdCode}`;
-    } else if (paymentMethod === 'moov') {
-      const ussdCode = `*555*2*1*${MERCHANT_PHONE}*${amount}#`;
-      window.location.href = `tel:${ussdCode}`;
+      // Wave: afficher le numéro marchand + QR code suggestion
+      // Pas de deep link fiable, on affiche les infos
+      setPaymentInitiated(true);
+      return;
     }
 
+    let ussdCode = '';
+    if (paymentMethod === 'orange') {
+      // Orange Money: *144*10*NUMERO*MONTANT#
+      ussdCode = `*144*10*${MERCHANT_PHONE}*${amount}#`;
+    } else if (paymentMethod === 'moov') {
+      // Moov Money: *555*2*1*NUMERO*MONTANT#
+      ussdCode = `*555*2*1*${MERCHANT_PHONE}*${amount}#`;
+    }
+
+    // Ouvrir le composeur téléphonique
+    window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
     setPaymentInitiated(true);
   };
 
@@ -176,26 +184,26 @@ export default function CheckoutWhatsApp() {
 
     const method = PAYMENT_METHODS[paymentMethod];
 
-    let message = `NOUVELLE COMMANDE - MONOLITH\\n\\n`;
-    message += `Client: ${fullName}\\n`;
-    message += `Telephone: ${phone}\\n`;
-    message += `Adresse: ${address}\\n`;
+    let message = `NOUVELLE COMMANDE - MONOLITH\n\n`;
+    message += `Client: ${fullName}\n`;
+    message += `Telephone: ${phone}\n`;
+    message += `Adresse: ${address}\n`;
     if (coordinates) {
-      message += `GPS: https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}\\n`;
+      message += `GPS: https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}\n`;
     }
-    message += `\\nProduits:\\n`;
+    message += `\nProduits:\n`;
 
     cartItems.forEach(item => {
-      message += `- ${item.quantity}x ${item.name} (${item.size}, ${item.color}) = ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\\n`;
+      message += `- ${item.quantity}x ${item.name} (${item.size}, ${item.color}) = ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\n`;
     });
 
-    message += `\\nSous-total: ${cartSubtotal.toLocaleString('fr-FR')} FCFA\\n`;
-    message += `Livraison: ${cartShipping.toLocaleString('fr-FR')} FCFA\\n`;
-    message += `Total: ${cartTotal.toLocaleString('fr-FR')} FCFA\\n`;
-    message += `Paiement: ${method.name}\\n`;
+    message += `\nSous-total: ${cartSubtotal.toLocaleString('fr-FR')} FCFA\n`;
+    message += `Livraison: ${cartShipping.toLocaleString('fr-FR')} FCFA\n`;
+    message += `Total: ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
+    message += `Paiement: ${method.name}\n`;
 
     if (imageUrl) {
-      message += `\\nPreuve de paiement: ${window.location.origin}${imageUrl}`;
+      message += `\nPreuve de paiement: ${window.location.origin}${imageUrl}`;
     }
 
     const encodedMessage = encodeURIComponent(message);
@@ -329,18 +337,25 @@ export default function CheckoutWhatsApp() {
                     <span className="block text-[10px] text-zinc-400 mt-1">(produits + livraison 1000 FCFA)</span>
                   </p>
 
-                  <button
-                    onClick={initiatePayment}
-                    className="w-full py-4 px-6 font-bold tracking-widest uppercase flex items-center justify-center gap-3 transition-all duration-300 hover:opacity-90 text-white"
-                    style={{ backgroundColor: currentMethod.color }}
-                  >
-                    <Smartphone className="w-5 h-5" />
-                    <span>
-                      {paymentMethod === 'wave' ? 'OUVRIR WAVE' : `COMPOSER ${currentMethod.ussdCode}`}
-                    </span>
-                  </button>
+                  {paymentMethod === 'wave' ? (
+                    <div className="border border-[#1CBBFF]/30 bg-[#1CBBFF]/5 p-4 text-center">
+                      <p className="text-sm font-bold text-[#1CBBFF] mb-2">Wave</p>
+                      <p className="text-xs text-zinc-600 mb-1">Envoyez {cartTotal.toLocaleString('fr-FR')} FCFA au numero:</p>
+                      <p className="text-2xl font-black tracking-tighter font-headline text-black">+226 63 29 31 39</p>
+                      <p className="text-[10px] text-zinc-400 mt-2">Ouvrez l'app Wave et cherchez ce numero</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={initiatePayment}
+                      className="w-full py-4 px-6 font-bold tracking-widest uppercase flex items-center justify-center gap-3 transition-all duration-300 hover:opacity-90 text-white"
+                      style={{ backgroundColor: currentMethod.color }}
+                    >
+                      <Smartphone className="w-5 h-5" />
+                      <span>COMPOSER {currentMethod.ussdCode}</span>
+                    </button>
+                  )}
 
-                  {paymentInitiated && (
+                  {paymentInitiated && paymentMethod !== 'wave' && (
                     <p className="text-[10px] text-green-600 mt-2 font-body text-center">
                        Paiement lance sur votre telephone
                     </p>
@@ -348,7 +363,7 @@ export default function CheckoutWhatsApp() {
 
                   <p className="text-[10px] text-zinc-400 mt-3 font-body text-center">
                     {paymentMethod === 'wave' 
-                      ? 'Vous serez redirige vers Wave pour completer le paiement' 
+                      ? 'Ouvrez l\'application Wave sur votre telephone pour completer le paiement' 
                       : 'Le code USSD va s\'ouvrir sur votre telephone. Suivez les instructions.'}
                   </p>
                 </div>
