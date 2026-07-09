@@ -238,15 +238,15 @@ app.get('/admin/', (req, res) => {
 });
 
 // FRONTEND REACT (CATCH-ALL TOUJOURS EN DERNIER)
-app.use(express.static(path.join(__dirname, 'FRONTEND', 'dist')));
+// FRONTEND REACT (CATCH-ALL TOUJOURS EN DERNIER)
+app.use(express.static(path.join(__dirname, 'dist')));
 
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Route API non trouvee' });
   }
-  res.sendFile(path.join(__dirname, 'FRONTEND', 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
-
 // START
 async function start() {
   await initDB();
