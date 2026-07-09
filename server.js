@@ -28,7 +28,7 @@ let db;
 
 async function initDB() {
   if (!uri) {
-    console.error(' ERREUR: MONGODB_URI est manquant ou vide dans les variables d\'environnement');
+    console.error('❌ ERREUR: MONGODB_URI est manquant ou vide dans les variables d\'environnement');
     console.error('   Verifiez Render > Environment');
     process.exit(1);
   }
@@ -42,7 +42,7 @@ async function initDB() {
       parametres: { nomBoutique: 'MONOLITH', devise: 'FCFA', fraisLivraison: 1000 }
     });
   }
-  console.log(' MongoDB connecte');
+  console.log('✅ MongoDB connecte');
 }
 
 // ═══════════════════════════════════════════
@@ -274,9 +274,9 @@ app.get('*', (req, res) => {
 async function start() {
   await initDB();
   app.listen(PORT, () => {
-    console.log(` Serveur sur le port ${PORT}`);
-    console.log(` Site: http://localhost:${PORT}`);
-    console.log(`Admin: http://localhost:${PORT}/admin/`);
+    console.log(`🚀 Serveur sur le port ${PORT}`);
+    console.log(`🌐 Site: http://localhost:${PORT}`);
+    console.log(`🎛️  Admin: http://localhost:${PORT}/admin/`);
   });
 }
 
