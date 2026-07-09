@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
 const { MongoClient } = require('mongodb');
 const cloudinary = require('cloudinary').v2;
@@ -22,10 +23,15 @@ cloudinary.config({
 // MONGODB
 // ═══════════════════════════════════════════
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+const client = new MongoClient(uri || 'mongodb://localhost:27017');
 let db;
 
 async function initDB() {
+  if (!uri) {
+    console.error(' ERREUR: MONGODB_URI est manquant ou vide dans les variables d\'environnement');
+    console.error('   Verifiez Render > Environment');
+    process.exit(1);
+  }
   await client.connect();
   db = client.db('monolith');
   const config = await db.collection('config').findOne({ _id: 'main' });
@@ -36,7 +42,7 @@ async function initDB() {
       parametres: { nomBoutique: 'MONOLITH', devise: 'FCFA', fraisLivraison: 1000 }
     });
   }
-  console.log('✅ MongoDB connecte');
+  console.log(' MongoDB connecte');
 }
 
 // ═══════════════════════════════════════════
@@ -51,7 +57,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ═══════════════════════════════════════════
-// MULTER — MEMORY (pas de fichiers sur disque)
+// MULTER — MEMORY STORAGE (pas de fichiers sur disque)
 // ═══════════════════════════════════════════
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const colorUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -60,7 +66,7 @@ const paymentUpload = multer({ storage: multer.memoryStorage(), limits: { fileSi
 // ═══════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════
-async function uploadToCloudinary(buffer, folder) {
+function uploadToCloudinary(buffer, folder) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder, resource_type: 'image' },
@@ -103,7 +109,12 @@ function checkAuth(req, res, next) {
 }
 
 // ═══════════════════════════════════════════
-// API PUBLIQUE
+// FICHIERS STATIQUES (UPLOADS D'ABORD)
+// ═══════════════════════════════════════════
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ═══════════════════════════════════════════
+// API PUBLIQUE (AVANT le catch-all !)
 // ═══════════════════════════════════════════
 
 app.get('/api/produits', async (req, res) => {
@@ -112,7 +123,7 @@ app.get('/api/produits', async (req, res) => {
 });
 
 app.get('/api/produits/:id', async (req, res) => {
-  const p = await db.collection('produits').findOne({ _id: req.params.id });
+  const p = await db.collection('produits').findOne({ id: req.params.id });
   if (!p) return res.status(404).json({ error: 'Produit non trouve' });
   res.json(p);
 });
@@ -146,7 +157,7 @@ app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, r
   }
 
   const produit = {
-    _id: uuidv4().slice(0, 8),
+    id: uuidv4().slice(0, 8),
     nom: req.body.nom || '',
     prix: parseFloat(req.body.prix) || 0,
     livraison: 1000,
@@ -166,7 +177,7 @@ app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, r
 });
 
 app.put('/api/admin/produits/:id', checkAuth, upload.single('image'), async (req, res) => {
-  const existing = await db.collection('produits').findOne({ _id: req.params.id });
+  const existing = await db.collection('produits').findOne({ id: req.params.id });
   if (!existing) return res.status(404).json({ error: 'Produit non trouve' });
 
   let imageUrl = existing.image;
@@ -188,21 +199,21 @@ app.put('/api/admin/produits/:id', checkAuth, upload.single('image'), async (req
     image: imageUrl
   };
 
-  await db.collection('produits').updateOne({ _id: req.params.id }, { $set: updates });
-  const updated = await db.collection('produits').findOne({ _id: req.params.id });
+  await db.collection('produits').updateOne({ id: req.params.id }, { $set: updates });
+  const updated = await db.collection('produits').findOne({ id: req.params.id });
   res.json({ success: true, produit: updated });
 });
 
 app.delete('/api/admin/produits/:id', checkAuth, async (req, res) => {
-  await db.collection('produits').deleteOne({ _id: req.params.id });
+  await db.collection('produits').deleteOne({ id: req.params.id });
   res.json({ success: true });
 });
 
 app.patch('/api/admin/produits/:id/disponible', checkAuth, async (req, res) => {
-  const p = await db.collection('produits').findOne({ _id: req.params.id });
+  const p = await db.collection('produits').findOne({ id: req.params.id });
   if (!p) return res.status(404).json({ error: 'Produit non trouve' });
   const newDispo = !p.disponible;
-  await db.collection('produits').updateOne({ _id: req.params.id }, { $set: { disponible: newDispo } });
+  await db.collection('produits').updateOne({ id: req.params.id }, { $set: { disponible: newDispo } });
   res.json({ success: true, disponible: newDispo });
 });
 
@@ -223,7 +234,10 @@ app.post('/api/upload-payment', paymentUpload.single('screenshot'), async (req, 
     return res.status(400).json({ error: 'Aucun fichier' });
   }
   const url = await uploadToCloudinary(req.file.buffer, 'monolith/payments');
-  res.json({ url, filename: req.file.originalname });
+  res.json({
+    url: url,
+    filename: req.file.originalname
+  });
 });
 
 app.get('/api/health', (req, res) => {
@@ -244,10 +258,13 @@ app.get('/admin/', (req, res) => {
 // ═══════════════════════════════════════════
 app.use(express.static(path.join(__dirname, 'FRONTEND', 'dist')));
 
+// Catch-all: renvoie index.html UNIQUEMENT si ce n'est pas une route API
 app.get('*', (req, res) => {
+  // Si l'URL commence par /api, c'est une 404 API
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Route API non trouvee' });
   }
+  // Sinon c'est une route React
   res.sendFile(path.join(__dirname, 'FRONTEND', 'dist', 'index.html'));
 });
 
@@ -257,13 +274,10 @@ app.get('*', (req, res) => {
 async function start() {
   await initDB();
   app.listen(PORT, () => {
-    console.log(`🚀 Serveur sur le port ${PORT}`);
-    console.log(`🌐 Site: http://localhost:${PORT}`);
-    console.log(`🎛️  Admin: http://localhost:${PORT}/admin/`);
+    console.log(` Serveur sur le port ${PORT}`);
+    console.log(` Site: http://localhost:${PORT}`);
+    console.log(`Admin: http://localhost:${PORT}/admin/`);
   });
 }
 
 start();
-
-
-
