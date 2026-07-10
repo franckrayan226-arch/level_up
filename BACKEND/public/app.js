@@ -161,7 +161,7 @@ function renderRecents(produits) {
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
     const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
     const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
-    const dispoCount = p.disponibilite ? p.disponibilite.filter(d => d.disponible).length : (p.tailles?.length || 0) * (p.couleurs?.length || 0);
+    const totalStock = p.disponibilite ? p.disponibilite.reduce((sum, d) => sum + (d.stock || 0), 0) : 0;
 
     return `
       <div class="recent-item">
@@ -176,7 +176,7 @@ function renderRecents(produits) {
         <div class="prix-final">Total: ${prixAvecLivraison} FCFA (livraison incluse)</div>
         ${taillesStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:1px">${escapeHtml(taillesStr)}</div>` : ''}
         ${couleursStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;letter-spacing:1px">${escapeHtml(couleursStr)}</div>` : ''}
-        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${dispoCount} combinaisons dispo</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Stock total: ${totalStock}</div>
         <div class="recent-item-status ${p.disponible !== false ? 'status-dispo' : 'status-rupture'}">
           ${p.disponible !== false ? 'EN LIGNE' : 'RUPTURE'}
         </div>
@@ -226,8 +226,7 @@ function renderProduits(produits) {
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
     const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
     const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
-    const dispoCount = p.disponibilite ? p.disponibilite.filter(d => d.disponible).length : (p.tailles?.length || 0) * (p.couleurs?.length || 0);
-    const totalComb = (p.tailles?.length || 0) * (p.couleurs?.length || 0);
+    const totalStock = p.disponibilite ? p.disponibilite.reduce((sum, d) => sum + (d.stock || 0), 0) : 0;
 
     return `
       <tr>
@@ -239,7 +238,7 @@ function renderProduits(produits) {
           ${p.description ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">${escapeHtml(p.description.substring(0, 50))}...</div>` : ''}
           ${taillesStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;letter-spacing:0.5px">Tailles: ${escapeHtml(taillesStr)}</div>` : ''}
           ${couleursStr ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;letter-spacing:0.5px">Couleurs: ${escapeHtml(couleursStr)}</div>` : ''}
-          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${dispoCount}/${totalComb} combinaisons</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">Stock total: ${totalStock}</div>
         </td>
         <td><span class="table-cat">${escapeHtml(p.categorie) || '—'}</span></td>
         <td>
@@ -311,7 +310,7 @@ async function toggleDisponible(id, current) {
 }
 
 // ============================================
-// EDIT PRODUIT — FIX: use ID lookup instead of inline JSON
+// EDIT PRODUIT
 // ============================================
 
 async function editProduitHandler(id) {
@@ -324,7 +323,7 @@ async function editProduitHandler(id) {
 }
 
 // ============================================
-// DISPONIBILITE MATRIX — CORRIGE
+// DISPONIBILITE MATRIX AVEC STOCK
 // ============================================
 
 function renderDisponibiliteMatrix() {
@@ -338,7 +337,7 @@ function renderDisponibiliteMatrix() {
   }).filter(n => n);
   
   if (tailles.length === 0 || couleurs.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Ajoutez des tailles et des couleurs pour gerer la disponibilite.</p>';
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Ajoutez des tailles et des couleurs pour gerer le stock.</p>';
     return;
   }
   
@@ -352,17 +351,29 @@ function renderDisponibiliteMatrix() {
     html += `<div class="dispo-matrix-row"><div class="dispo-cell row-header">${escapeHtml(t)}</div>`;
     couleurs.forEach(c => {
       const existing = disponibiliteData.find(d => d.taille === t && d.couleur === c);
-      const isChecked = existing ? existing.disponible : true;
-      const checkedAttr = isChecked ? 'checked' : '';
-      // CORRECTION: ajout de data attributes pour récupérer les valeurs au submit
+      const stock = existing ? (existing.stock ?? 0) : 0;
+      const isAvailable = existing ? (existing.disponible !== false && stock > 0) : true;
       html += `
-        <div class="dispo-cell">
-          <label class="dispo-checkbox">
+        <div class="dispo-cell" style="flex-direction:column;gap:6px;min-width:90px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <input type="number" 
+              data-taille="${escapeHtml(t)}" 
+              data-couleur="${escapeHtml(c)}"
+              value="${stock}" 
+              min="0"
+              placeholder="0"
+              style="width:50px;text-align:center;background:var(--bg-input);border:1px solid var(--border);color:var(--text);padding:6px;font-size:12px;font-family:var(--font-mono);"
+              onchange="updateDisponibiliteStock('${escapeHtml(t)}', '${escapeHtml(c)}', this.value)"
+            >
+            <span style="font-size:10px;color:var(--text-muted);">qty</span>
+          </div>
+          <label class="dispo-checkbox" style="transform:scale(0.85);">
             <input type="checkbox" 
               data-taille="${escapeHtml(t)}" 
-              data-couleur="${escapeHtml(c)}" 
-              onchange="toggleDisponibiliteCell('${escapeHtml(t)}', '${escapeHtml(c)}', this.checked)" 
-              ${checkedAttr}>
+              data-couleur="${escapeHtml(c)}"
+              ${isAvailable ? 'checked' : ''}
+              onchange="toggleDisponibiliteCell('${escapeHtml(t)}', '${escapeHtml(c)}', this.checked)"
+            >
             <span class="dispo-check"></span>
           </label>
         </div>
@@ -374,52 +385,59 @@ function renderDisponibiliteMatrix() {
   container.innerHTML = html;
 }
 
+function updateDisponibiliteStock(taille, couleur, stockValue) {
+  const stock = parseInt(stockValue) || 0;
+  const idx = disponibiliteData.findIndex(d => d.taille === taille && d.couleur === couleur);
+  if (idx >= 0) {
+    disponibiliteData[idx].stock = stock;
+    if (stock <= 0) disponibiliteData[idx].disponible = false;
+  } else {
+    disponibiliteData.push({ taille, couleur, disponible: stock > 0, stock });
+  }
+}
+
 function toggleDisponibiliteCell(taille, couleur, checked) {
   const idx = disponibiliteData.findIndex(d => d.taille === taille && d.couleur === couleur);
   if (idx >= 0) {
     disponibiliteData[idx].disponible = checked;
   } else {
-    disponibiliteData.push({ taille, couleur, disponible: checked });
+    disponibiliteData.push({ taille, couleur, disponible: checked, stock: 0 });
   }
 }
 
-// CORRECTION: lit les checkboxes du DOM au lieu de reconstruire
 function getDisponibiliteData() {
+  const inputs = document.querySelectorAll('#disponibilite-matrix-container input[type="number"]');
   const checkboxes = document.querySelectorAll('#disponibilite-matrix-container input[type="checkbox"]');
+  
+  const tailles = [...selectedSizes];
+  const couleurs = colorBlocks.map(b => {
+    const input = document.querySelector(`#${b.id} .color-name-input`);
+    return input ? input.value.trim() : '';
+  }).filter(n => n);
+  
   const result = [];
   
-  checkboxes.forEach(cb => {
-    const taille = cb.dataset.taille;
-    const couleur = cb.dataset.couleur;
-    if (taille && couleur) {
+  tailles.forEach(t => {
+    couleurs.forEach(c => {
+      const stockInput = Array.from(inputs).find(i => i.dataset.taille === t && i.dataset.couleur === c);
+      const cb = Array.from(checkboxes).find(i => i.dataset.taille === t && i.dataset.couleur === c);
+      const stock = stockInput ? parseInt(stockInput.value) || 0 : 0;
+      const disponible = cb ? cb.checked : stock > 0;
+      
       result.push({
-        taille: taille,
-        couleur: couleur,
-        disponible: cb.checked
-      });
-    }
-  });
-  
-  // Si pas de checkboxes (matrice vide), fallback sur toutes dispo
-  if (result.length === 0) {
-    const tailles = [...selectedSizes];
-    const couleurs = colorBlocks.map(b => {
-      const input = document.querySelector(`#${b.id} .color-name-input`);
-      return input ? input.value.trim() : '';
-    }).filter(n => n);
-    
-    tailles.forEach(t => {
-      couleurs.forEach(c => {
-        result.push({ taille: t, couleur: c, disponible: true });
+        taille: t,
+        couleur: c,
+        disponible: disponible && stock > 0,
+        stock: stock
       });
     });
-  }
+  });
   
   return result;
 }
 
 function setDisponibiliteData(data) {
-  disponibiliteData = Array.isArray(data) ? [...data] : [];
+  disponibiliteData = Array.isArray(data) ? data.map(d => ({ ...d, stock: d.stock ?? 0 })) : [];
 }
 
 // ============================================
@@ -617,7 +635,7 @@ function clearColorBlocks() {
 }
 
 // ============================================
-// FORM — FIXED: proper edit mode tracking
+// FORM
 // ============================================
 
 function editProduit(p) {
@@ -754,7 +772,6 @@ async function submitProduit(e) {
   }
 
   formData.append('couleurs', JSON.stringify(colorsData));
-  // CORRECTION: utilise getDisponibiliteData() qui lit les checkboxes du DOM
   formData.append('disponibilite', JSON.stringify(getDisponibiliteData()));
 
   try {

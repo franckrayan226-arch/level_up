@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { MapPin, Loader2, CreditCard, UploadCloud, Trash2, ArrowRight, ShoppingBag, Smartphone } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
-import { getImageUrl } from '../api';
+import { getImageUrl, verifyAndDecrementStock } from '../api';
 
 type PaymentMethod = 'orange' | 'moov' | 'wave';
 
@@ -103,22 +103,17 @@ export default function CheckoutWhatsApp() {
     const amount = cartTotal;
 
     if (paymentMethod === 'wave') {
-      // Wave: afficher le numéro marchand + QR code suggestion
-      // Pas de deep link fiable, on affiche les infos
       setPaymentInitiated(true);
       return;
     }
 
     let ussdCode = '';
     if (paymentMethod === 'orange') {
-      // Orange Money: *144*10*NUMERO*MONTANT#
       ussdCode = `*144*10*${MERCHANT_PHONE}*${amount}#`;
     } else if (paymentMethod === 'moov') {
-      // Moov Money: *555*2*1*NUMERO*MONTANT#
       ussdCode = `*555*2*1*${MERCHANT_PHONE}*${amount}#`;
     }
 
-    // Ouvrir le composeur téléphonique
     window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
     setPaymentInitiated(true);
   };
@@ -174,7 +169,24 @@ export default function CheckoutWhatsApp() {
       return;
     }
 
+    // VERIFIER LE STOCK AVANT COMMANDE
+    const stockItems = cartItems.map(item => ({
+      productId: item.productId,
+      taille: item.size,
+      couleur: item.color,
+      quantity: item.quantity
+    }));
+
     setIsSubmitting(true);
+
+    const stockCheck = await verifyAndDecrementStock(stockItems);
+    
+    if (!stockCheck.success) {
+      const failed = stockCheck.items.filter((i: any) => !i.ok);
+      alert(`Stock insuffisant:\n${failed.map((f: any) => `- ${f.taille}/${f.couleur}: ${f.raison}`).join('\n')}`);
+      setIsSubmitting(false);
+      return;
+    }
 
     let imageUrl = uploadedImageUrl;
     if (!imageUrl && screenshotFile) {

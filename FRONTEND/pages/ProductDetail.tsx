@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, Zap } from 'lucide-react';
-import { fetchProduct, getImageUrl, isCombinationAvailable, type ApiProduct } from '../api';
+import { fetchProduct, getImageUrl, isCombinationAvailable, getStockForCombination, type ApiProduct } from '../api';
 import { useCart } from '../context/CartContext';
 import { BrandLogo } from '../components/BrandLogo';
 
@@ -63,6 +63,12 @@ export default function ProductDetail() {
       return;
     }
 
+    const stockRestant = getStockForCombination(product, selectedSize, selectedColor);
+    if (stockRestant <= 0) {
+      alert('Stock epuise pour cette combinaison');
+      return;
+    }
+
     const prixFinal = product.promotion > 0 
       ? Math.round(product.prix * (1 - product.promotion/100))
       : product.prix;
@@ -94,6 +100,10 @@ export default function ProductDetail() {
   const comboAvailable = selectedSize && selectedColor 
     ? isCombinationAvailable(product, selectedSize, selectedColor) 
     : true;
+
+  const stockRestant = selectedSize && selectedColor
+    ? getStockForCombination(product, selectedSize, selectedColor)
+    : 0;
 
   return (
     <div className="pt-20 pb-24 max-w-7xl mx-auto">
@@ -149,9 +159,9 @@ export default function ProductDetail() {
             </div>
 
             <div className="mb-10 flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${product.disponible ? 'bg-green-500' : 'bg-red-500'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${product.disponible && stockRestant > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase font-body">
-                {product.disponible ? 'EN STOCK' : 'RUPTURE DE STOCK'}
+                {product.disponible && stockRestant > 0 ? `${stockRestant} EN STOCK` : 'RUPTURE DE STOCK'}
               </span>
             </div>
 
@@ -191,23 +201,40 @@ export default function ProductDetail() {
                     <span className="font-headline font-extrabold text-xs tracking-widest uppercase">SELECT SIZE</span>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
-                    {product.tailles.map(size => (
-                      <button 
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`h-14 flex items-center justify-center font-bold text-xs transition-colors ${
-                          selectedSize === size 
-                            ? 'bg-black text-white' 
-                            : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {product.tailles.map(size => {
+                      const sizeStock = getStockForCombination(product, size, selectedColor);
+                      const sizeAvailable = isCombinationAvailable(product, size, selectedColor);
+                      return (
+                        <button 
+                          key={size}
+                          onClick={() => setSelectedSize(size)}
+                          disabled={!sizeAvailable}
+                          className={`h-14 flex items-center justify-center font-bold text-xs transition-colors relative ${
+                            selectedSize === size 
+                              ? 'bg-black text-white' 
+                              : sizeAvailable
+                                ? 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'
+                                : 'bg-zinc-50 text-zinc-300 cursor-not-allowed line-through'
+                          }`}
+                        >
+                          {size}
+                          {sizeStock > 0 && sizeStock < 5 && sizeAvailable && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center">
+                              {sizeStock}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                   {!comboAvailable && selectedSize && selectedColor && (
                     <p className="text-[10px] text-red-500 mt-3 font-body font-bold tracking-widest uppercase">
                       INDISPONIBLE EN {selectedSize} / {selectedColor}
+                    </p>
+                  )}
+                  {comboAvailable && stockRestant > 0 && stockRestant < 5 && (
+                    <p className="text-[10px] text-orange-500 mt-3 font-body font-bold tracking-widest uppercase">
+                      Plus que {stockRestant} en stock !
                     </p>
                   )}
                 </div>
@@ -218,10 +245,10 @@ export default function ProductDetail() {
           <div className="mt-16">
             <button 
               onClick={handleAddToCart}
-              disabled={!product.disponible || !comboAvailable}
+              disabled={!product.disponible || !comboAvailable || stockRestant <= 0}
               className="w-full bg-black text-white h-20 font-headline font-black text-xl tracking-tighter uppercase flex items-center justify-center gap-4 hover:bg-zinc-800 transition-colors active:scale-[0.98] duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {!product.disponible ? 'INDISPONIBLE' : !comboAvailable ? 'COMBINAISON INDISPONIBLE' : 'ADD TO COMMANDER'}
+              {!product.disponible ? 'INDISPONIBLE' : stockRestant <= 0 ? 'STOCK EPUISE' : !comboAvailable ? 'COMBINAISON INDISPONIBLE' : 'ADD TO COMMANDER'}
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

@@ -1,4 +1,3 @@
-
 const API_BASE = window.location.hostname === 'localhost' 
   ? 'http://localhost:8080/api' 
   : '/api';
@@ -7,6 +6,7 @@ export interface DisponibiliteItem {
   taille: string;
   couleur: string;
   disponible: boolean;
+  stock: number;
 }
 
 export interface ApiProduct {
@@ -61,5 +61,26 @@ export function isCombinationAvailable(
   const item = product.disponibilite.find(
     d => d.taille === taille && d.couleur === couleur
   );
-  return item ? item.disponible : true;
+  return item ? item.disponible && item.stock > 0 : true;
+}
+
+export function getStockForCombination(
+  product: ApiProduct,
+  taille: string,
+  couleur: string
+): number {
+  if (!product.disponibilite || product.disponibilite.length === 0) return product.stock || 0;
+  const item = product.disponibilite.find(
+    d => d.taille === taille && d.couleur === couleur
+  );
+  return item ? item.stock : 0;
+}
+
+export async function verifyAndDecrementStock(items: { productId: string; taille: string; couleur: string; quantity: number }[]) {
+  const res = await fetch(`${API_BASE}/commande/verifier-stock`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items })
+  });
+  return res.json();
 }

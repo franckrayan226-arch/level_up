@@ -123,6 +123,63 @@ app.get('/api/categories', async (req, res) => {
   res.json(config?.categories || []);
 });
 
+// NOUVEAU: Endpoint pour vérifier et décrémenter le stock
+app.post('/api/commande/verifier-stock', async (req, res) => {
+  const { items } = req.body; // [{ productId, taille, couleur, quantity }]
+  
+  if (!items || !Array.isArray(items)) {
+    return res.status(400).json({ error: 'Items requis' });
+  }
+
+  const results = [];
+  const updates = [];
+
+  for (const item of items) {
+    const p = await db.collection('produits').findOne({ id: item.productId });
+    if (!p) {
+      results.push({ ...item, ok: false, raison: 'Produit non trouve' });
+      continue;
+    }
+
+    // Chercher le stock pour cette taille/couleur
+    const dispo = p.disponibilite?.find(
+      d => d.taille === item.taille && d.couleur === item.couleur
+    );
+
+    if (!dispo) {
+      results.push({ ...item, ok: false, raison: 'Combinaison non configuree' });
+      continue;
+    }
+
+    if (dispo.stock <= 0) {
+      results.push({ ...item, ok: false, raison: 'Rupture de stock', stockRestant: 0 });
+      continue;
+    }
+
+    if (dispo.stock < item.quantity) {
+      results.push({ ...item, ok: false, raison: 'Stock insuffisant', stockRestant: dispo.stock });
+      continue;
+    }
+
+    results.push({ ...item, ok: true, stockRestant: dispo.stock - item.quantity });
+    updates.push({ productId: item.productId, taille: item.taille, couleur: item.couleur, quantity: item.quantity });
+  }
+
+  const allOk = results.every(r => r.ok);
+
+  if (allOk) {
+    // Décrémenter le stock
+    for (const upd of updates) {
+      await db.collection('produits').updateOne(
+        { id: upd.productId, 'disponibilite.taille': upd.taille, 'disponibilite.couleur': upd.couleur },
+        { $inc: { 'disponibilite.$.stock': -upd.quantity } }
+      );
+    }
+  }
+
+  res.json({ success: allOk, items: results });
+});
+
 // API ADMIN
 app.get('/api/admin/stats', checkAuth, async (req, res) => {
   const total = await db.collection('produits').countDocuments();
@@ -238,7 +295,6 @@ app.get('/admin/', (req, res) => {
 });
 
 // FRONTEND REACT (CATCH-ALL TOUJOURS EN DERNIER)
-// FRONTEND REACT (CATCH-ALL TOUJOURS EN DERNIER)
 app.use(express.static(path.join(__dirname, 'dist')));
 
 app.get('*', (req, res) => {
@@ -247,6 +303,7 @@ app.get('*', (req, res) => {
   }
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
+
 // START
 async function start() {
   await initDB();
