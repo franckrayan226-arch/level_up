@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { MapPin, Loader2, CreditCard, UploadCloud, Trash2, ArrowRight, ShoppingBag, Smartphone } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
-import { getImageUrl, verifyAndDecrementStock } from '../api';
+import { getImageUrl, verifyAndDecrementStock, getApiBaseUrl } from '../api';
 
 type PaymentMethod = 'orange' | 'moov' | 'wave';
 
@@ -16,7 +16,12 @@ interface PaymentInfo {
   bgColor: string;
 }
 
-const MERCHANT_PHONE = '63293139';
+// NUMEROS MARCHANDS CORRIGES
+const MERCHANT_PHONES: Record<PaymentMethod, string> = {
+  orange: '07636257',
+  moov: '63293139',
+  wave: '63293139',
+};
 
 const PAYMENT_METHODS: Record<PaymentMethod, PaymentInfo> = {
   orange: {
@@ -101,6 +106,7 @@ export default function CheckoutWhatsApp() {
 
   const initiatePayment = () => {
     const amount = cartTotal;
+    const merchantPhone = MERCHANT_PHONES[paymentMethod];
 
     if (paymentMethod === 'wave') {
       setPaymentInitiated(true);
@@ -109,12 +115,13 @@ export default function CheckoutWhatsApp() {
 
     let ussdCode = '';
     if (paymentMethod === 'orange') {
-      ussdCode = `*144*10*${MERCHANT_PHONE}*${amount}#`;
+      ussdCode = `*144*10*${merchantPhone}*${amount}#`;
     } else if (paymentMethod === 'moov') {
-      ussdCode = `*555*2*1*${MERCHANT_PHONE}*${amount}#`;
+      ussdCode = `*555*2*1*${merchantPhone}*${amount}#`;
     }
 
-    window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
+    // CORRECTION : ne PAS encoder le # final — c'est un caractere de controle USSD
+    window.location.href = `tel:${ussdCode}`;
     setPaymentInitiated(true);
   };
 
@@ -123,7 +130,8 @@ export default function CheckoutWhatsApp() {
     formData.append('screenshot', file);
 
     try {
-      const res = await fetch('/api/upload-payment', {
+      // CORRECTION : URL absolue vers le backend
+      const res = await fetch(`${getApiBaseUrl()}/api/upload-payment`, {
         method: 'POST',
         body: formData
       });
@@ -132,6 +140,7 @@ export default function CheckoutWhatsApp() {
       return data.url;
     } catch (err) {
       console.error('Upload error:', err);
+      alert('Erreur lors de l\'upload de la preuve. Verifiez que le backend est en ligne.');
       return null;
     }
   };
@@ -140,9 +149,13 @@ export default function CheckoutWhatsApp() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // CORRECTION : reset l'input pour permettre de re-selectionner le meme fichier
+    e.target.value = '';
+
     setScreenshot(URL.createObjectURL(file));
     setScreenshotFile(file);
     setIsUploading(true);
+    setUploadedImageUrl(null);
 
     const url = await uploadScreenshot(file);
     if (url) {
@@ -156,6 +169,9 @@ export default function CheckoutWhatsApp() {
     setScreenshot(null);
     setScreenshotFile(null);
     setUploadedImageUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const sendOrder = async () => {
@@ -169,60 +185,72 @@ export default function CheckoutWhatsApp() {
       return;
     }
 
-    // VERIFIER LE STOCK AVANT COMMANDE
-    const stockItems = cartItems.map(item => ({
-      productId: item.productId,
-      taille: item.size,
-      couleur: item.color,
-      quantity: item.quantity
-    }));
-
     setIsSubmitting(true);
 
-    const stockCheck = await verifyAndDecrementStock(stockItems);
-    
-    if (!stockCheck.success) {
-      const failed = stockCheck.items.filter((i: any) => !i.ok);
-      alert(`Stock insuffisant:\n${failed.map((f: any) => `- ${f.taille}/${f.couleur}: ${f.raison}`).join('\n')}`);
+    try {
+      // VERIFIER LE STOCK AVANT COMMANDE
+      const stockItems = cartItems.map(item => ({
+        productId: item.productId,
+        taille: item.size,
+        couleur: item.color,
+        quantity: item.quantity
+      }));
+
+      const stockCheck = await verifyAndDecrementStock(stockItems);
+      
+      if (!stockCheck.success) {
+        const failed = stockCheck.items.filter((i: any) => !i.ok);
+        alert(`Stock insuffisant:\n${failed.map((f: any) => `- ${f.taille}/${f.couleur}: ${f.raison}`).join('\n')}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      let imageUrl = uploadedImageUrl;
+      if (!imageUrl && screenshotFile) {
+        imageUrl = await uploadScreenshot(screenshotFile);
+        if (imageUrl) setUploadedImageUrl(imageUrl);
+      }
+
+      if (!imageUrl) {
+        alert('L\'upload de la preuve de paiement a echoue. Veuillez reessayer.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const method = PAYMENT_METHODS[paymentMethod];
+
+      let message = `NOUVELLE COMMANDE - MONOLITH\n\n`;
+      message += `Client: ${fullName}\n`;
+      message += `Telephone: ${phone}\n`;
+      message += `Adresse: ${address}\n`;
+      if (coordinates) {
+        message += `GPS: https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}\n`;
+      }
+      message += `\nProduits:\n`;
+
+      cartItems.forEach(item => {
+        message += `- ${item.quantity}x ${item.name} (${item.size}, ${item.color}) = ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\n`;
+      });
+
+      message += `\nSous-total: ${cartSubtotal.toLocaleString('fr-FR')} FCFA\n`;
+      message += `Livraison: ${cartShipping.toLocaleString('fr-FR')} FCFA\n`;
+      message += `Total: ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
+      message += `Paiement: ${method.name}\n`;
+
+      // CORRECTION : URL absolue de l'image (backend) dans le message WhatsApp
+      const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${getApiBaseUrl()}${imageUrl}`;
+      message += `\nPreuve de paiement: ${fullImageUrl}`;
+
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/226${MERCHANT_PHONES[paymentMethod]}?text=${encodedMessage}`;
+
+      window.open(whatsappUrl, '_blank');
+    } catch (error) {
+      console.error('Order error:', error);
+      alert('Une erreur est survenue lors de l\'envoi. Verifiez votre connexion et reessayez.');
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    let imageUrl = uploadedImageUrl;
-    if (!imageUrl && screenshotFile) {
-      imageUrl = await uploadScreenshot(screenshotFile);
-      if (imageUrl) setUploadedImageUrl(imageUrl);
-    }
-
-    const method = PAYMENT_METHODS[paymentMethod];
-
-    let message = `NOUVELLE COMMANDE - MONOLITH\n\n`;
-    message += `Client: ${fullName}\n`;
-    message += `Telephone: ${phone}\n`;
-    message += `Adresse: ${address}\n`;
-    if (coordinates) {
-      message += `GPS: https://maps.google.com/?q=${coordinates.lat},${coordinates.lon}\n`;
-    }
-    message += `\nProduits:\n`;
-
-    cartItems.forEach(item => {
-      message += `- ${item.quantity}x ${item.name} (${item.size}, ${item.color}) = ${(item.price * item.quantity).toLocaleString('fr-FR')} FCFA\n`;
-    });
-
-    message += `\nSous-total: ${cartSubtotal.toLocaleString('fr-FR')} FCFA\n`;
-    message += `Livraison: ${cartShipping.toLocaleString('fr-FR')} FCFA\n`;
-    message += `Total: ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
-    message += `Paiement: ${method.name}\n`;
-
-    if (imageUrl) {
-      message += `\nPreuve de paiement: ${window.location.origin}${imageUrl}`;
-    }
-
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/22663293139?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank');
-    setIsSubmitting(false);
   };
 
   if (cartItems.length === 0) {
@@ -353,7 +381,7 @@ export default function CheckoutWhatsApp() {
                     <div className="border border-[#1CBBFF]/30 bg-[#1CBBFF]/5 p-4 text-center">
                       <p className="text-sm font-bold text-[#1CBBFF] mb-2">Wave</p>
                       <p className="text-xs text-zinc-600 mb-1">Envoyez {cartTotal.toLocaleString('fr-FR')} FCFA au numero:</p>
-                      <p className="text-2xl font-black tracking-tighter font-headline text-black">+226 63 29 31 39</p>
+                      <p className="text-2xl font-black tracking-tighter font-headline text-black">+226 {MERCHANT_PHONES.wave}</p>
                       <p className="text-[10px] text-zinc-400 mt-2">Ouvrez l'app Wave et cherchez ce numero</p>
                     </div>
                   ) : (

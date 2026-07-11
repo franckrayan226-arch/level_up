@@ -18,6 +18,13 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: '0.0.0.0',
+      // CORRECTION : proxy pour que les appels /api en dev atteignent le backend
+      proxy: {
+        '/api': {
+          target: env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       outDir: '../dist',

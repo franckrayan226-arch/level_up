@@ -78,7 +78,9 @@ export const products = fallbackProducts;
 export async function getProducts(): Promise<Product[]> {
   try {
     const produits = await fetchProducts();
-    const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace('/api', '');
+    // CORRECTION : eviter le double slash si l'URL ou le path contient deja un /
+    const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+    const BASE_URL = rawBase.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
     const mappedProducts = produits.map((p: ApiProduct) => ({
       id: p.id,
@@ -91,7 +93,7 @@ export async function getProducts(): Promise<Product[]> {
         hex: '#000000',
         images: c.images || []
       })),
-      image: p.image ? `${BASE_URL}${p.image}` : '',
+      image: p.image ? `${BASE_URL}${p.image.startsWith('/') ? '' : '/'}${p.image}` : '',
       description: p.description || '',
       promotion: p.promotion || 0,
       stock: p.stock || 0,

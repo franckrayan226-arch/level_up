@@ -57,6 +57,11 @@ export function getImageUrl(image: string | null): string {
   return `${base}${image}`;
 }
 
+// HELPER AJOUTE : base URL du backend (sans /api et sans slash final)
+export function getApiBaseUrl(): string {
+  return API_BASE.replace('/api', '').replace(/\/$/, '');
+}
+
 export function isCombinationAvailable(
   product: ApiProduct,
   taille: string,
