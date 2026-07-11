@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "cd FRONTEND && npm install && npm run build && cd ..",
-    "postinstall": "cd FRONTEND && npm install"
+    "postinstall": "cd FRONTEND && npm install",
+    "build": "cd FRONTEND && npx vite build && cd .."
   },
   "dependencies": {
     "cloudinary": "^1.41.0",
