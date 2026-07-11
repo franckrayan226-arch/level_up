@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { fetchProducts, getImageUrl, type ApiProduct } from '../api';
 
 export default function Shop() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+  
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,6 +21,14 @@ export default function Shop() {
         setLoading(false);
       });
   }, []);
+
+  const filteredProducts = searchQuery
+    ? products.filter(p => 
+        p.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (p.categorie && p.categorie.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : products;
 
   if (loading) {
     return (
@@ -43,19 +54,28 @@ export default function Shop() {
         <h1 className="font-headline font-black text-4xl md:text-5xl tracking-tighter uppercase">ALL PRODUCTS</h1>
       </div>
 
+      {searchQuery && (
+        <div className="mb-8">
+          <p className="text-xs text-zinc-500 font-body tracking-widest uppercase">
+            Résultats pour "{searchQuery}" — {filteredProducts.length} article{filteredProducts.length > 1 ? 's' : ''}
+          </p>
+          <button 
+            onClick={() => setSearchParams({})}
+            className="text-[10px] font-bold tracking-widest uppercase text-primary border-b border-primary pb-1 mt-2 hover:text-black transition-colors"
+          >
+            Voir tous les produits
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-12">
-        {products.map((product) => {
+        {filteredProducts.map((product) => {
           const prixFinal = product.promotion > 0 
             ? Math.round(product.prix * (1 - product.promotion/100))
             : product.prix;
           const prixAvecLivraison = prixFinal + (product.livraison || 1000);
           const taillesStr = product.tailles?.join(' / ') || '';
           const couleursStr = product.couleurs?.map(c => c.nom).join(' / ') || '';
-          const hasRestrictedCombos = product.disponibilite && product.disponibilite.some(d => !d.disponible);
-          const dispoCount = product.disponibilite 
-            ? product.disponibilite.filter(d => d.disponible).length 
-            : (product.tailles?.length || 0) * (product.couleurs?.length || 0);
-          const totalComb = (product.tailles?.length || 0) * (product.couleurs?.length || 0);
 
           return (
             <Link to={`/product/${product.id}`} key={product.id} className="flex flex-col gap-4 group">
@@ -78,11 +98,6 @@ export default function Shop() {
                 <span className="font-body text-[9px] text-zinc-400 tracking-tighter">
                   + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
                 </span>
-                {hasRestrictedCombos && (
-                  <span className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                    {dispoCount}/{totalComb} combinaisons disponibles
-                  </span>
-                )}
                 {taillesStr && (
                   <span className="font-body text-[9px] text-zinc-400 tracking-wider mt-1">
                     Tailles: {taillesStr}
@@ -98,6 +113,12 @@ export default function Shop() {
           );
         })}
       </div>
+
+      {filteredProducts.length === 0 && searchQuery && (
+        <div className="text-center py-20">
+          <p className="font-headline font-bold text-sm tracking-widest uppercase text-zinc-400">Aucun résultat trouvé</p>
+        </div>
+      )}
 
       <div className="mt-24 mb-12">
         <h2 className="font-headline font-black text-4xl leading-none uppercase tracking-tighter mb-4">SEASON 04<br/>COLLECTION</h2>

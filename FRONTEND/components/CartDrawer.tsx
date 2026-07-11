@@ -36,6 +36,12 @@ export default function CartDrawer() {
     navigate('/checkout');
   };
 
+  const hasUnavailableItems = cartItems.some(item => {
+    const product = products.find(p => p.id === item.productId);
+    return product?.disponible === false || 
+      (product?.disponibilite && product.disponibilite.find(d => d.taille === item.size && d.couleur === item.color)?.disponible === false);
+  });
+
   return (
     <>
       <div 
@@ -163,11 +169,17 @@ export default function CartDrawer() {
             </div>
             <button 
               onClick={handleCheckout}
-              className="w-full bg-primary text-on-primary py-5 px-6 font-bold tracking-widest uppercase flex justify-between items-center group transition-all duration-300 hover:bg-primary-fixed font-headline"
+              disabled={hasUnavailableItems}
+              className="w-full bg-primary text-on-primary py-5 px-6 font-bold tracking-widest uppercase flex justify-between items-center group transition-all duration-300 hover:bg-primary-fixed font-headline disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span>CHECKOUT</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
             </button>
+            {hasUnavailableItems && (
+              <p className="text-[10px] text-red-500 text-center mt-2 font-body font-bold tracking-widest uppercase">
+                Des articles sont indisponibles
+              </p>
+            )}
           </div>
         )}
       </div>

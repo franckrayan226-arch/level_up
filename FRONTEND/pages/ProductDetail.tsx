@@ -159,9 +159,9 @@ export default function ProductDetail() {
             </div>
 
             <div className="mb-10 flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${product.disponible && stockRestant > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${product.disponible && comboAvailable && stockRestant > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase font-body">
-                {product.disponible && stockRestant > 0 ? `${stockRestant} EN STOCK` : 'RUPTURE DE STOCK'}
+                {product.disponible && comboAvailable && stockRestant > 0 ? 'EN STOCK' : 'RUPTURE DE STOCK'}
               </span>
             </div>
 
@@ -202,7 +202,6 @@ export default function ProductDetail() {
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {product.tailles.map(size => {
-                      const sizeStock = getStockForCombination(product, size, selectedColor);
                       const sizeAvailable = isCombinationAvailable(product, size, selectedColor);
                       return (
                         <button 
@@ -218,11 +217,6 @@ export default function ProductDetail() {
                           }`}
                         >
                           {size}
-                          {sizeStock > 0 && sizeStock < 5 && sizeAvailable && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center">
-                              {sizeStock}
-                            </span>
-                          )}
                         </button>
                       );
                     })}
@@ -230,11 +224,6 @@ export default function ProductDetail() {
                   {!comboAvailable && selectedSize && selectedColor && (
                     <p className="text-[10px] text-red-500 mt-3 font-body font-bold tracking-widest uppercase">
                       INDISPONIBLE EN {selectedSize} / {selectedColor}
-                    </p>
-                  )}
-                  {comboAvailable && stockRestant > 0 && stockRestant < 5 && (
-                    <p className="text-[10px] text-orange-500 mt-3 font-body font-bold tracking-widest uppercase">
-                      Plus que {stockRestant} en stock !
                     </p>
                   )}
                 </div>

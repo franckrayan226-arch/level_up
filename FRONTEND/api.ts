@@ -32,6 +32,12 @@ export async function fetchProducts(): Promise<ApiProduct[]> {
   return res.json();
 }
 
+export async function searchProducts(query: string): Promise<ApiProduct[]> {
+  const res = await fetch(`${API_BASE}/produits/search?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error('Erreur recherche produits');
+  return res.json();
+}
+
 export async function fetchProduct(id: string): Promise<ApiProduct> {
   const res = await fetch(`${API_BASE}/produits/${id}`);
   if (!res.ok) throw new Error('Produit non trouve');

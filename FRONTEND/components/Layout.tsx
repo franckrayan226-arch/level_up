@@ -1,19 +1,30 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Search, ShoppingBag, User } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import CartDrawer from './CartDrawer';
 import { BrandLogo } from './BrandLogo';
 
 export default function Layout() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { cartItems, openCart } = useCart();
+  const [searchQuery, setSearchQuery] = useState('');
   
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/shop');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-primary selection:text-on-primary">
@@ -35,10 +46,19 @@ export default function Layout() {
 
         {/* Right Actions */}
         <div className="flex items-center justify-end gap-6 md:gap-8">
-          <button className="flex items-center gap-2 font-headline font-bold text-[11px] tracking-[0.2em] uppercase text-zinc-500 hover:text-black transition-colors group">
-            <Search className="w-5 h-5 md:w-4 md:h-4 text-black md:text-zinc-500 group-hover:text-black transition-colors" />
-            <span className="hidden md:inline">SEARCH</span>
-          </button>
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="RECHERCHER..."
+              className="hidden md:block bg-transparent border-0 border-b border-zinc-200 focus:border-primary focus:ring-0 p-0 pb-1 text-[11px] font-bold tracking-widest uppercase placeholder:text-zinc-300 w-32 focus:w-48 transition-all duration-300 outline-none"
+            />
+            <button type="submit" className="flex items-center gap-2 font-headline font-bold text-[11px] tracking-[0.2em] uppercase text-zinc-500 hover:text-black transition-colors group">
+              <Search className="w-5 h-5 md:w-4 md:h-4 text-black md:text-zinc-500 group-hover:text-black transition-colors" />
+              <span className="hidden md:inline">SEARCH</span>
+            </button>
+          </form>
           <Link to="/profile" className={`hidden md:flex items-center gap-2 font-headline font-bold text-[11px] tracking-[0.2em] uppercase transition-colors ${pathname === '/profile' ? 'text-black' : 'text-zinc-500 hover:text-black'}`}>
             <User className="w-4 h-4" />
             <span>PROFILE</span>

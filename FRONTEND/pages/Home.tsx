@@ -72,7 +72,6 @@ export default function Home() {
                       ? Math.round(displayProducts[0].prix * (1 - displayProducts[0].promotion/100))
                       : displayProducts[0].prix;
                     const prixAvecLivraison = prixFinal + (displayProducts[0].livraison || 1000);
-                    const hasRestricted = displayProducts[0].disponibilite && displayProducts[0].disponibilite.some(d => !d.disponible);
                     return (
                       <div className="text-right">
                         <p className="font-headline font-black text-lg md:text-2xl tracking-tighter whitespace-nowrap shrink-0 mt-1 xl:mt-0">
@@ -81,11 +80,6 @@ export default function Home() {
                         <p className="font-body text-[9px] text-zinc-400 tracking-wider">
                           + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
                         </p>
-                        {hasRestricted && (
-                          <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limite
-                          </p>
-                        )}
                       </div>
                     );
                   })()}
@@ -114,7 +108,6 @@ export default function Home() {
                       ? Math.round(displayProducts[1].prix * (1 - displayProducts[1].promotion/100))
                       : displayProducts[1].prix;
                     const prixAvecLivraison = prixFinal + (displayProducts[1].livraison || 1000);
-                    const hasRestricted = displayProducts[1].disponibilite && displayProducts[1].disponibilite.some(d => !d.disponible);
                     return (
                       <div className="text-right">
                         <p className="font-headline font-black text-xs md:text-xl tracking-tighter whitespace-nowrap shrink-0">
@@ -123,11 +116,6 @@ export default function Home() {
                         <p className="font-body text-[9px] text-zinc-400 tracking-wider">
                           + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
                         </p>
-                        {hasRestricted && (
-                          <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limite
-                          </p>
-                        )}
                       </div>
                     );
                   })()}
@@ -156,7 +144,6 @@ export default function Home() {
                       ? Math.round(displayProducts[2].prix * (1 - displayProducts[2].promotion/100))
                       : displayProducts[2].prix;
                     const prixAvecLivraison = prixFinal + (displayProducts[2].livraison || 1000);
-                    const hasRestricted = displayProducts[2].disponibilite && displayProducts[2].disponibilite.some(d => !d.disponible);
                     return (
                       <div className="text-right">
                         <p className="font-headline font-black text-xs md:text-xl tracking-tighter whitespace-nowrap shrink-0">
@@ -165,11 +152,6 @@ export default function Home() {
                         <p className="font-body text-[9px] text-zinc-400 tracking-wider">
                           + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
                         </p>
-                        {hasRestricted && (
-                          <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limite
-                          </p>
-                        )}
                       </div>
                     );
                   })()}
@@ -198,7 +180,6 @@ export default function Home() {
                       ? Math.round(displayProducts[3].prix * (1 - displayProducts[3].promotion/100))
                       : displayProducts[3].prix;
                     const prixAvecLivraison = prixFinal + (displayProducts[3].livraison || 1000);
-                    const hasRestricted = displayProducts[3].disponibilite && displayProducts[3].disponibilite.some(d => !d.disponible);
                     return (
                       <div className="text-right">
                         <p className="font-headline font-black text-lg md:text-2xl tracking-tighter whitespace-nowrap shrink-0 mt-1 xl:mt-0">
@@ -207,11 +188,6 @@ export default function Home() {
                         <p className="font-body text-[9px] text-zinc-400 tracking-wider">
                           + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
                         </p>
-                        {hasRestricted && (
-                          <p className="font-body text-[9px] text-red-400 tracking-wider mt-1">
-                            Stock limite
-                          </p>
-                        )}
                       </div>
                     );
                   })()}

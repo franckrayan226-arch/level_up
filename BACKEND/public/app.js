@@ -161,7 +161,7 @@ function renderRecents(produits) {
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
     const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
     const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
-    const totalStock = p.disponibilite ? p.disponibilite.reduce((sum, d) => sum + (d.stock || 0), 0) : 0;
+    const totalStock = p.stock || 0;
 
     return `
       <div class="recent-item">
@@ -226,7 +226,7 @@ function renderProduits(produits) {
     const imageUrl = p.image ? (p.image.startsWith('http') ? p.image : `${API_BASE}${p.image}`) : '';
     const taillesStr = p.tailles && p.tailles.length ? p.tailles.join(' / ') : '';
     const couleursStr = p.couleurs && p.couleurs.length ? p.couleurs.map(c => c.nom).join(' / ') : '';
-    const totalStock = p.disponibilite ? p.disponibilite.reduce((sum, d) => sum + (d.stock || 0), 0) : 0;
+    const totalStock = p.stock || 0;
 
     return `
       <tr>
@@ -646,7 +646,6 @@ function editProduit(p) {
   document.getElementById('form-prix').value = p.prix || '';
   document.getElementById('form-categorie').value = p.categorie || '';
   document.getElementById('form-promotion').value = p.promotion || 0;
-  document.getElementById('form-stock').value = p.stock || 0;
   document.getElementById('form-disponible').checked = p.disponible !== false;
   document.getElementById('form-description').value = p.description || '';
 
@@ -733,7 +732,6 @@ async function submitProduit(e) {
   formData.append('prix', document.getElementById('form-prix').value);
   formData.append('categorie', document.getElementById('form-categorie').value);
   formData.append('promotion', document.getElementById('form-promotion').value);
-  formData.append('stock', document.getElementById('form-stock').value);
   formData.append('disponible', document.getElementById('form-disponible').checked);
   formData.append('description', document.getElementById('form-description').value);
 

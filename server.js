@@ -92,6 +92,11 @@ function parseDisponibilite(body) {
   } catch { return []; }
 }
 
+function calculateTotalStock(disponibilite) {
+  if (!Array.isArray(disponibilite)) return 0;
+  return disponibilite.reduce((sum, d) => sum + (parseInt(d.stock) || 0), 0);
+}
+
 // AUTH
 const ADMIN_PASSWORD = process.env.MOT_DE_PASSE_ADMIN || 'test1234';
 
@@ -112,6 +117,20 @@ app.get('/api/produits', async (req, res) => {
   res.json(produits);
 });
 
+app.get('/api/produits/search', async (req, res) => {
+  const q = req.query.q || '';
+  const regex = new RegExp(q, 'i');
+  const produits = await db.collection('produits').find({
+    disponible: { $ne: false },
+    $or: [
+      { nom: regex },
+      { description: regex },
+      { categorie: regex }
+    ]
+  }).toArray();
+  res.json(produits);
+});
+
 app.get('/api/produits/:id', async (req, res) => {
   const p = await db.collection('produits').findOne({ id: req.params.id });
   if (!p) return res.status(404).json({ error: 'Produit non trouve' });
@@ -123,9 +142,9 @@ app.get('/api/categories', async (req, res) => {
   res.json(config?.categories || []);
 });
 
-// NOUVEAU: Endpoint pour vérifier et décrémenter le stock
+// Endpoint pour verifier et decrementer le stock
 app.post('/api/commande/verifier-stock', async (req, res) => {
-  const { items } = req.body; // [{ productId, taille, couleur, quantity }]
+  const { items } = req.body;
   
   if (!items || !Array.isArray(items)) {
     return res.status(400).json({ error: 'Items requis' });
@@ -141,7 +160,6 @@ app.post('/api/commande/verifier-stock', async (req, res) => {
       continue;
     }
 
-    // Chercher le stock pour cette taille/couleur
     const dispo = p.disponibilite?.find(
       d => d.taille === item.taille && d.couleur === item.couleur
     );
@@ -168,11 +186,21 @@ app.post('/api/commande/verifier-stock', async (req, res) => {
   const allOk = results.every(r => r.ok);
 
   if (allOk) {
-    // Décrémenter le stock
     for (const upd of updates) {
       await db.collection('produits').updateOne(
         { id: upd.productId, 'disponibilite.taille': upd.taille, 'disponibilite.couleur': upd.couleur },
         { $inc: { 'disponibilite.$.stock': -upd.quantity } }
+      );
+    }
+    
+    // Recalculer le stock total pour chaque produit modifie
+    const updatedProductIds = [...new Set(updates.map(u => u.productId))];
+    for (const pid of updatedProductIds) {
+      const p = await db.collection('produits').findOne({ id: pid });
+      const newTotal = calculateTotalStock(p.disponibilite);
+      await db.collection('produits').updateOne(
+        { id: pid },
+        { $set: { stock: newTotal, disponible: newTotal > 0 } }
       );
     }
   }
@@ -200,6 +228,9 @@ app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, r
     imageUrl = await uploadToCloudinary(req.file.buffer, 'monolith/produits');
   }
 
+  const disponibilite = parseDisponibilite(req.body);
+  const totalStock = calculateTotalStock(disponibilite);
+
   const produit = {
     id: uuidv4().slice(0, 8),
     nom: req.body.nom || '',
@@ -208,9 +239,9 @@ app.post('/api/admin/produits', checkAuth, upload.single('image'), async (req, r
     description: req.body.description || '',
     categorie: req.body.categorie || '',
     promotion: parseFloat(req.body.promotion) || 0,
-    stock: parseInt(req.body.stock) || 0,
+    stock: totalStock,
     disponible: req.body.disponible === 'true' || req.body.disponible === true,
-    disponibilite: parseDisponibilite(req.body),
+    disponibilite: disponibilite,
     image: imageUrl,
     tailles: parseTailles(req.body),
     couleurs: parseCouleurs(req.body),
@@ -230,15 +261,18 @@ app.put('/api/admin/produits/:id', checkAuth, upload.single('image'), async (req
     imageUrl = await uploadToCloudinary(req.file.buffer, 'monolith/produits');
   }
 
+  const disponibilite = parseDisponibilite(req.body);
+  const totalStock = calculateTotalStock(disponibilite);
+
   const updates = {
     nom: req.body.nom,
     prix: parseFloat(req.body.prix),
     description: req.body.description,
     categorie: req.body.categorie,
     promotion: parseFloat(req.body.promotion) || 0,
-    stock: parseInt(req.body.stock) || 0,
+    stock: totalStock,
     disponible: req.body.disponible === 'true' || req.body.disponible === true,
-    disponibilite: parseDisponibilite(req.body),
+    disponibilite: disponibilite,
     tailles: parseTailles(req.body),
     couleurs: parseCouleurs(req.body),
     livraison: 1000,
