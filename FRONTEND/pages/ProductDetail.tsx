@@ -105,12 +105,10 @@ export default function ProductDetail() {
     ? getStockForCombination(product, selectedSize, selectedColor)
     : 0;
 
-  // Determine si au moins une combinaison est disponible pour ce produit
   const hasAnyStock = product.disponibilite 
     ? product.disponibilite.some(d => d.disponible && d.stock > 0)
     : product.stock > 0;
 
-  // Verifier si le stock est limite (entre 1 et 4) pour la combinaison selectionnee
   const isLowStock = comboAvailable && stockRestant > 0 && stockRestant < 5;
 
   return (
@@ -166,7 +164,6 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* STOCK STATUS - sans aucun nombre */}
             <div className="mb-10 flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${product.disponible && hasAnyStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase font-body">
@@ -229,7 +226,7 @@ export default function ProductDetail() {
                         >
                           {size}
                           {sizeLowStock && (
-                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" title="Stock limité"></span>
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
                           )}
                         </button>
                       );
