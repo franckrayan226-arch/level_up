@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://level-up-1-dlqa.onrender.com/sitemap.xml
