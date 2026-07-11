@@ -110,6 +110,9 @@ export default function ProductDetail() {
     ? product.disponibilite.some(d => d.disponible && d.stock > 0)
     : product.stock > 0;
 
+  // Verifier si le stock est limite (entre 1 et 4) pour la combinaison selectionnee
+  const isLowStock = comboAvailable && stockRestant > 0 && stockRestant < 5;
+
   return (
     <div className="pt-20 pb-24 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
@@ -163,7 +166,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* STOCK STATUS - sans nombre */}
+            {/* STOCK STATUS - sans aucun nombre */}
             <div className="mb-10 flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${product.disponible && hasAnyStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase font-body">
@@ -208,7 +211,9 @@ export default function ProductDetail() {
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {product.tailles.map(size => {
+                      const sizeStock = getStockForCombination(product, size, selectedColor);
                       const sizeAvailable = isCombinationAvailable(product, size, selectedColor);
+                      const sizeLowStock = sizeAvailable && sizeStock > 0 && sizeStock < 5;
                       return (
                         <button 
                           key={size}
@@ -223,6 +228,9 @@ export default function ProductDetail() {
                           }`}
                         >
                           {size}
+                          {sizeLowStock && (
+                            <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" title="Stock limité"></span>
+                          )}
                         </button>
                       );
                     })}
@@ -230,6 +238,11 @@ export default function ProductDetail() {
                   {!comboAvailable && selectedSize && selectedColor && (
                     <p className="text-[10px] text-red-500 mt-3 font-body font-bold tracking-widest uppercase">
                       INDISPONIBLE EN {selectedSize} / {selectedColor}
+                    </p>
+                  )}
+                  {isLowStock && (
+                    <p className="text-[10px] text-orange-500 mt-3 font-body font-bold tracking-widest uppercase">
+                      STOCK LIMITE
                     </p>
                   )}
                 </div>

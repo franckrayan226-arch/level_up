@@ -76,6 +76,7 @@ export default function Shop() {
           const prixAvecLivraison = prixFinal + (product.livraison || 1000);
           const taillesStr = product.tailles?.join(' / ') || '';
           const couleursStr = product.couleurs?.map(c => c.nom).join(' / ') || '';
+          const hasLowStock = product.disponibilite && product.disponibilite.some(d => d.disponible && d.stock > 0 && d.stock < 5);
 
           return (
             <Link to={`/product/${product.id}`} key={product.id} className="flex flex-col gap-4 group">
@@ -98,6 +99,11 @@ export default function Shop() {
                 <span className="font-body text-[9px] text-zinc-400 tracking-tighter">
                   + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
                 </span>
+                {hasLowStock && (
+                  <span className="font-body text-[9px] text-orange-400 tracking-wider mt-1">
+                    Stock limité
+                  </span>
+                )}
                 {taillesStr && (
                   <span className="font-body text-[9px] text-zinc-400 tracking-wider mt-1">
                     Tailles: {taillesStr}
