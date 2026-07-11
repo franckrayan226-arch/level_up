@@ -105,6 +105,11 @@ export default function ProductDetail() {
     ? getStockForCombination(product, selectedSize, selectedColor)
     : 0;
 
+  // Determine si au moins une combinaison est disponible pour ce produit
+  const hasAnyStock = product.disponibilite 
+    ? product.disponibilite.some(d => d.disponible && d.stock > 0)
+    : product.stock > 0;
+
   return (
     <div className="pt-20 pb-24 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
@@ -158,10 +163,11 @@ export default function ProductDetail() {
               </div>
             </div>
 
+            {/* STOCK STATUS - sans nombre */}
             <div className="mb-10 flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${product.disponible && comboAvailable && stockRestant > 0 ? 'bg-green-500' : 'bg-red-500'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${product.disponible && hasAnyStock ? 'bg-green-500' : 'bg-red-500'}`}></span>
               <span className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase font-body">
-                {product.disponible && comboAvailable && stockRestant > 0 ? 'EN STOCK' : 'RUPTURE DE STOCK'}
+                {product.disponible && hasAnyStock ? 'EN STOCK' : 'RUPTURE DE STOCK'}
               </span>
             </div>
 
