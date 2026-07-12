@@ -16,11 +16,14 @@ interface PaymentInfo {
   bgColor: string;
 }
 
-// NUMEROS MARCHANDS CORRIGES
+// NUMERO WHATSAPP INCHANGE — contact client
+const WHATSAPP_NUMBER = '63293139';
+
+// NUMEROS MARCHANDS PAIEMENT USSD
 const MERCHANT_PHONES: Record<PaymentMethod, string> = {
-  orange: '07636257',
-  moov: '63293139',
-  wave: '63293139',
+  orange: '07636257',   // ← CORRIGE pour Orange Money
+  moov: '63293139',     // ← inchangé
+  wave: '63293139',     // ← inchangé
 };
 
 const PAYMENT_METHODS: Record<PaymentMethod, PaymentInfo> = {
@@ -120,7 +123,6 @@ export default function CheckoutWhatsApp() {
       ussdCode = `*555*2*1*${merchantPhone}*${amount}#`;
     }
 
-    // CORRECTION : ne PAS encoder le # final — c'est un caractere de controle USSD
     window.location.href = `tel:${ussdCode}`;
     setPaymentInitiated(true);
   };
@@ -130,7 +132,6 @@ export default function CheckoutWhatsApp() {
     formData.append('screenshot', file);
 
     try {
-      // CORRECTION : URL absolue vers le backend
       const res = await fetch(`${getApiBaseUrl()}/api/upload-payment`, {
         method: 'POST',
         body: formData
@@ -149,7 +150,6 @@ export default function CheckoutWhatsApp() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // CORRECTION : reset l'input pour permettre de re-selectionner le meme fichier
     e.target.value = '';
 
     setScreenshot(URL.createObjectURL(file));
@@ -188,7 +188,6 @@ export default function CheckoutWhatsApp() {
     setIsSubmitting(true);
 
     try {
-      // VERIFIER LE STOCK AVANT COMMANDE
       const stockItems = cartItems.map(item => ({
         productId: item.productId,
         taille: item.size,
@@ -237,12 +236,12 @@ export default function CheckoutWhatsApp() {
       message += `Total: ${cartTotal.toLocaleString('fr-FR')} FCFA\n`;
       message += `Paiement: ${method.name}\n`;
 
-      // CORRECTION : URL absolue de l'image (backend) dans le message WhatsApp
       const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${getApiBaseUrl()}${imageUrl}`;
       message += `\nPreuve de paiement: ${fullImageUrl}`;
 
       const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/226${MERCHANT_PHONES[paymentMethod]}?text=${encodedMessage}`;
+      // WHATSAPP NUMERO INCHANGE — toujours 63293139
+      const whatsappUrl = `https://wa.me/226${WHATSAPP_NUMBER}?text=${encodedMessage}`;
 
       window.open(whatsappUrl, '_blank');
     } catch (error) {
