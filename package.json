@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "build": "cd FRONTEND && npm install && npx vite build && cd .."
+    "build": "cd FRONTEND && npm install && ./node_modules/.bin/vite build"
   },
   "dependencies": {
     "cloudinary": "^1.41.0",

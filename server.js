@@ -353,7 +353,8 @@ async function start() {
     console.error('MongoDB non connecte (le serveur continue en mode degrade):', err.message);
   }
   
-  app.listen(PORT, () => {
+  // CORRECTION : ecouter sur 0.0.0.0 pour Render
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`Serveur sur le port ${PORT}`);
     console.log(`Site: http://localhost:${PORT}`);
     console.log(`Admin: http://localhost:${PORT}/admin/`);
