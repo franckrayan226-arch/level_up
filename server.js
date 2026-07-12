@@ -27,16 +27,32 @@ async function initDB() {
     throw new Error("MONGODB_URI est manquant");
   }
   await client.connect();
-  db = client.db('monolith');
-  const config = await db.collection('config').findOne({ _id: 'main' });
-  if (!config) {
-    await db.collection('config').insertOne({
-      _id: 'main',
-      categories: ['T-Shirts', 'Hoodies', 'Pantalons', 'Accessoires'],
-      parametres: { nomBoutique: 'MONOLITH', devise: 'FCFA', fraisLivraison: 1000 }
-    });
+  // CORRECTION : "monolithe" avec "e" final
+  db = client.db('monolithe');
+  
+  // Vérifier si collection "configuration" existe (au lieu de "config")
+  const collections = await db.listCollections().toArray();
+  const hasConfig = collections.some(c => c.name === 'config');
+  
+  if (!hasConfig) {
+    // Migrer depuis "configuration" si elle existe
+    const oldConfig = await db.collection('configuration').findOne();
+    if (oldConfig) {
+      await db.collection('config').insertOne({
+        _id: 'main',
+        categories: oldConfig.categories || ['T-Shirts', 'Hoodies', 'Pantalons', 'Accessoires'],
+        parametres: oldConfig.parametres || { nomBoutique: 'MONOLITH', devise: 'FCFA', fraisLivraison: 1000 }
+      });
+    } else {
+      await db.collection('config').insertOne({
+        _id: 'main',
+        categories: ['T-Shirts', 'Hoodies', 'Pantalons', 'Accessoires'],
+        parametres: { nomBoutique: 'MONOLITH', devise: 'FCFA', fraisLivraison: 1000 }
+      });
+    }
   }
-  console.log('MongoDB connecte');
+  
+  console.log('MongoDB connecte - Base: monolithe');
 }
 
 // MIDDLEWARES
@@ -200,7 +216,6 @@ app.post('/api/commande/verifier-stock', async (req, res) => {
       );
     }
     
-    // Recalculer le stock total pour chaque produit modifie
     const updatedProductIds = [...new Set(updates.map(u => u.productId))];
     for (const pid of updatedProductIds) {
       const p = await db.collection('produits').findOne({ id: pid });
@@ -328,6 +343,28 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), dbConnected: !!db });
 });
 
+// BACKUP / RESTORE
+app.get('/api/admin/backup', checkAuth, async (req, res) => {
+  if (!db) return res.status(503).json({ error: 'DB indisponible' });
+  const produits = await db.collection('produits').find().toArray();
+  const config = await db.collection('config').findOne({ _id: 'main' });
+  res.setHeader('Content-Disposition', 'attachment; filename=backup-monolith.json');
+  res.json({ produits, config, exportedAt: new Date().toISOString() });
+});
+
+app.post('/api/admin/restore', checkAuth, async (req, res) => {
+  if (!db) return res.status(503).json({ error: 'DB indisponible' });
+  const { produits, config } = req.body;
+  if (produits?.length) {
+    await db.collection('produits').deleteMany({});
+    await db.collection('produits').insertMany(produits);
+  }
+  if (config) {
+    await db.collection('config').replaceOne({ _id: 'main' }, config, { upsert: true });
+  }
+  res.json({ success: true, count: produits?.length || 0 });
+});
+
 // DASHBOARD ADMIN
 app.use('/admin', express.static(path.join(__dirname, 'BACKEND', 'public')));
 app.get('/admin', (req, res) => res.redirect('/admin/'));
@@ -353,7 +390,6 @@ async function start() {
     console.error('MongoDB non connecte (le serveur continue en mode degrade):', err.message);
   }
   
-  // CORRECTION : ecouter sur 0.0.0.0 pour Render
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Serveur sur le port ${PORT}`);
     console.log(`Site: http://localhost:${PORT}`);
