@@ -24,8 +24,7 @@ let db;
 
 async function initDB() {
   if (!uri) {
-    console.error("ERREUR: MONGODB_URI est manquant");
-    process.exit(1);
+    throw new Error("MONGODB_URI est manquant");
   }
   await client.connect();
   db = client.db('monolith');
@@ -110,6 +109,14 @@ function checkAuth(req, res, next) {
 
 // FICHIERS STATIQUES
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// PROTECTION API SI DB INDISPONIBLE
+app.use('/api', (req, res, next) => {
+  if (!db) {
+    return res.status(503).json({ error: 'Base de donnees temporairement indisponible' });
+  }
+  next();
+});
 
 // API PUBLIQUE
 app.get('/api/produits', async (req, res) => {
@@ -318,7 +325,7 @@ app.post('/api/upload-payment', paymentUpload.single('screenshot'), async (req, 
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), dbConnected: !!db });
 });
 
 // DASHBOARD ADMIN
@@ -340,7 +347,12 @@ app.get('*', (req, res) => {
 
 // START
 async function start() {
-  await initDB();
+  try {
+    await initDB();
+  } catch (err) {
+    console.error('MongoDB non connecte (le serveur continue en mode degrade):', err.message);
+  }
+  
   app.listen(PORT, () => {
     console.log(`Serveur sur le port ${PORT}`);
     console.log(`Site: http://localhost:${PORT}`);
