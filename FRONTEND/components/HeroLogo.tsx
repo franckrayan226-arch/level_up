@@ -45,7 +45,7 @@ function StarGlyph({
   );
 }
 
-const WORD_SIZE = 'clamp(3.25rem, 17.5vw, 12rem)';
+const WORD_SIZE = 'clamp(3.5rem, 19vw, 12rem)';
 const BG_WORD_SIZE = 'clamp(6rem, 26vw, 20rem)';
 
 const TICKER_ITEMS = [
@@ -178,7 +178,7 @@ export default function HeroLogo() {
   }, []);
 
   return (
-    <div ref={rootRef} className="relative z-10 h-full w-full select-none">
+    <div ref={rootRef} className="absolute inset-0 z-10 select-none overflow-hidden">
       <div
         className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center overflow-hidden"
         style={{ transform: 'translate3d(0, var(--sy-bg, 0px), 0)' }}
