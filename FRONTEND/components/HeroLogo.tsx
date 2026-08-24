@@ -12,6 +12,15 @@ const TICKER_ITEMS = [
   'LIVRAISON PARTOUT AU BURKINA',
 ];
 
+const BAND_ITEMS = [
+  'NOUVELLE COLLECTION',
+  'LEVEL UP',
+  'DROP SAISONNIER',
+  'LEVEL UP',
+  'STREETWEAR PREMIUM',
+  'LEVEL UP',
+];
+
 function RevealLetter({ letter, delay, outline = false }: { letter: string; delay: number; outline?: boolean }) {
   return (
     <span className="lu-letter inline-block" style={{ animationDelay: `${delay}s` }} aria-hidden="true">
