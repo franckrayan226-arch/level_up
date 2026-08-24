@@ -246,12 +246,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Entrees et parallaxe : instantanes (accessibilite) */
   .lu-hero-rise { animation: none; opacity: 1; }
   .lu-letter { animation: none; }
+  .lu-cta-rise { animation: none; opacity: 1; }
+  .lu-badge-pop { animation: none; }
   .lu-hero-spin, .lu-hero-spin-slow, .lu-hero-spin-ambient,
-  .lu-hero-spin-reverse, .lu-arrow-loop, .lu-marquee,
-  .lu-marquee-band, .lu-marquee-bg, .lu-marquee-bg-rev,
-  .lu-wave, .lu-grain, .lu-badge-pop, .lu-seal-spin,
-  .lu-cta-rise { animation: none; }
-  .lu-cta-rise { opacity: 1; }
+  .lu-hero-spin-reverse, .lu-arrow-loop, .lu-wave, .lu-grain { animation: none; }
+  /* Les boucles de marque (bande inclinee, ticker, fond, sceau) restent
+     en mouvement : c'est l'identite visuelle du site. */
 }
