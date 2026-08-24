@@ -104,7 +104,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes lu-rise {
-  from { opacity: 0; transform: translateY(24px); }
+  from { opacity: 0; transform: translateY(44px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -161,27 +161,34 @@ h1, h2, h3, h4, h5, h6 {
   to { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
-@keyframes lu-badge-wiggle {
-  0%, 100% { transform: rotate(-7deg); }
-  50% { transform: rotate(4deg); }
-}
-
 .lu-badge-pop {
-  animation: lu-badge-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s both;
+  animation: lu-badge-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s both;
 }
 
-.lu-badge-wiggle {
-  animation: lu-badge-wiggle 3.4s ease-in-out 1.9s infinite;
+.lu-seal-spin {
+  animation: lu-spin 16s linear infinite;
 }
 
+/* Cascade d'entree : plus longue sur mobile pour descendre jusqu'au CTA */
 .lu-hero-rise {
   opacity: 0;
-  animation: lu-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: lu-rise 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .lu-letter {
-  animation: lu-letter-rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: lu-letter-rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform;
+}
+
+.lu-cta-rise {
+  opacity: 0;
+  animation: lu-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 1.3s forwards;
+}
+
+@media (min-width: 768px) {
+  .lu-hero-rise { animation-duration: 0.9s; }
+  .lu-letter { animation-duration: 0.85s; }
+  .lu-cta-rise { animation-duration: 0.8s; animation-delay: 1.05s; }
 }
 
 .lu-wave {
@@ -244,5 +251,7 @@ h1, h2, h3, h4, h5, h6 {
   .lu-hero-spin, .lu-hero-spin-slow, .lu-hero-spin-ambient,
   .lu-hero-spin-reverse, .lu-arrow-loop, .lu-marquee,
   .lu-marquee-band, .lu-marquee-bg, .lu-marquee-bg-rev,
-  .lu-wave, .lu-grain, .lu-badge-pop, .lu-badge-wiggle { animation: none; }
+  .lu-wave, .lu-grain, .lu-badge-pop, .lu-seal-spin,
+  .lu-cta-rise { animation: none; }
+  .lu-cta-rise { opacity: 1; }
 }

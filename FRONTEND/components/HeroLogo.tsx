@@ -226,15 +226,25 @@ export default function HeroLogo() {
               ))}
             </span>
             <span
-              className="lu-badge-pop absolute -bottom-3 right-[-10px] z-20 md:-bottom-4 md:right-[-26px]"
+              className="lu-badge-pop absolute -bottom-8 right-[-8px] z-20 md:-bottom-12 md:right-[-22px]"
               aria-hidden="true"
             >
-              <span className="lu-badge-wiggle -rotate-6 bg-[#E6320F] px-2 py-1.5 md:px-3 md:py-2">
-                <span className="block border border-white/90 px-2 py-1 md:px-3 md:py-1.5">
-                  <span className="block whitespace-nowrap font-label text-[9px] font-bold uppercase tracking-[0.28em] text-white md:text-[11px]">
-                    Authentique
-                  </span>
-                </span>
+              <span className="relative block">
+                <svg viewBox="0 0 100 100" className="lu-seal-spin block h-20 w-20 md:h-28 md:w-28">
+                  <circle cx="50" cy="50" r="50" fill="#E6320F" />
+                  <defs>
+                    <path id="lu-seal-circle" d="M 50,50 m -36,0 a 36,36 0 1,1 72,0 a 36,36 0 1,1 -72,0" fill="none" />
+                  </defs>
+                  <text fill="#ffffff" fontSize="8" fontWeight="700" letterSpacing="1">
+                    <textPath href="#lu-seal-circle" textLength="226" lengthAdjust="spacingAndGlyphs">
+                      AUTHENTIQUE ★ LEVEL UP ★ AUTHENTIQUE ★ LEVEL UP ★
+                    </textPath>
+                  </text>
+                </svg>
+                <StarGlyph
+                  variant="full"
+                  className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2 text-white md:h-10 md:w-10"
+                />
               </span>
             </span>
           </span>

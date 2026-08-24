@@ -24,7 +24,7 @@ export default function Home() {
         <HeroLogo />
         <div className="relative z-20 w-full h-full max-w-7xl mx-auto flex flex-col justify-end items-center px-4 sm:px-6 pb-16 md:pb-20 pointer-events-none">
           <div className="flex flex-col items-center mt-auto w-full pointer-events-auto">
-            <Link to="/shop" className="bg-transparent border border-black text-black font-headline font-bold text-[10px] sm:text-xs md:text-sm px-10 sm:px-12 md:px-16 py-3 sm:py-4 md:py-5 tracking-[0.2em] hover:bg-black hover:text-white active:bg-zinc-800 transition-all duration-300 uppercase w-fit backdrop-blur-sm sm:backdrop-blur-[2px]">
+            <Link to="/shop" className="lu-cta-rise bg-transparent border border-black text-black font-headline font-bold text-[10px] sm:text-xs md:text-sm px-10 sm:px-12 md:px-16 py-3 sm:py-4 md:py-5 tracking-[0.2em] hover:bg-black hover:text-white active:bg-zinc-800 transition-all duration-300 uppercase w-fit backdrop-blur-sm sm:backdrop-blur-[2px]">
               Decouvrir la Boutique
             </Link>
           </div>
