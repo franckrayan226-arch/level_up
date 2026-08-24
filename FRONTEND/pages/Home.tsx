@@ -6,7 +6,7 @@ import StarGlyph from '../components/StarGlyph';
 
 const RED = '#E6320F';
 
-function PriceBlock({ product, big = false }: { product: ApiProduct; big?: boolean }) {
+function PriceBlock({ product }: { product: ApiProduct }) {
   const prixFinal = product.promotion > 0
     ? Math.round(product.prix * (1 - product.promotion / 100))
     : product.prix;
@@ -16,12 +16,12 @@ function PriceBlock({ product, big = false }: { product: ApiProduct; big?: boole
   return (
     <div className="text-right shrink-0">
       {product.promotion > 0 && (
-        <p className={`font-label font-bold uppercase tracking-widest text-[#E6320F] ${big ? 'text-xs md:text-sm' : 'text-[9px] md:text-[11px]'}`}>
+        <p className="font-label font-bold uppercase tracking-widest text-[9px] md:text-[11px] text-[#E6320F]">
           -{product.promotion}%
         </p>
       )}
       <p
-        className={`font-headline font-black tracking-tighter whitespace-nowrap ${big ? 'text-lg md:text-2xl mt-1 xl:mt-0' : 'text-xs md:text-xl'} ${product.promotion > 0 ? 'text-[#E6320F]' : 'text-black'}`}
+        className={`font-headline font-black tracking-tighter whitespace-nowrap text-sm md:text-base ${product.promotion > 0 ? 'text-[#E6320F]' : 'text-black'}`}
       >
         {prixFinal.toLocaleString('fr-FR')} FCFA
       </p>
@@ -31,88 +31,50 @@ function PriceBlock({ product, big = false }: { product: ApiProduct; big?: boole
         </p>
       )}
       <p className="font-body text-[9px] text-zinc-400 tracking-wider">
-        + livraison: {prixAvecLivraison.toLocaleString('fr-FR')} FCFA
+        + livr. {prixAvecLivraison.toLocaleString('fr-FR')}
       </p>
       {hasLowStock && (
-        <p className="font-body text-[9px] tracking-wider mt-1 text-[#E6320F]">Stock limité</p>
+        <p className="font-body text-[9px] tracking-wider mt-0.5 text-[#E6320F]">Stock limité</p>
       )}
     </div>
   );
 }
 
-function ProductCard({
-  product,
-  index,
-  frameClass,
-  className = '',
-  textWrapClass = '',
-  subtitle = 'Essential',
-  big = false,
-}: {
-  product: ApiProduct;
-  index: number;
-  frameClass: string;
-  className?: string;
-  textWrapClass?: string;
-  subtitle?: string;
-  big?: boolean;
-}) {
+function ProductCard({ product, index }: { product: ApiProduct; index: number }) {
   return (
-    <Link to={`/product/${product.id}`} className={`group block ${className}`}>
-      <div
-        className={`relative bg-zinc-100 border border-zinc-200 mb-3 md:mb-5 overflow-hidden transition-colors duration-300 group-hover:border-black ${frameClass}`}
-      >
+    <Link to={`/product/${product.id}`} className="group block">
+      <div className="relative bg-zinc-100 border border-zinc-200 mb-3 overflow-hidden transition-colors duration-300 group-hover:border-black aspect-[3/4]">
         <img
           src={getImageUrl(product.image)}
           alt={product.nom}
           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
           referrerPolicy="no-referrer"
         />
-        <div className="absolute top-3 left-3 md:top-4 md:left-4 bg-black text-white px-2 py-1 md:px-3 md:py-1.5 font-label text-[9px] md:text-[10px] font-bold tracking-[0.2em] uppercase">
+        <div className="absolute top-2.5 left-2.5 md:top-3 md:left-3 bg-black text-white px-2 py-1 md:px-2.5 md:py-1 font-label text-[9px] md:text-[10px] font-bold tracking-[0.2em] uppercase">
           {String(index + 1).padStart(2, '0')}
         </div>
         {product.promotion > 0 && (
-          <div
-            className="absolute top-3 right-3 md:top-4 md:right-4 bg-[#E6320F] text-white px-2 py-1 md:px-2.5 md:py-1.5 font-label text-[9px] md:text-[10px] font-bold tracking-widest uppercase"
-          >
+          <div className="absolute top-2.5 right-2.5 md:top-3 md:right-3 bg-[#E6320F] text-white px-2 py-1 md:px-2.5 md:py-1 font-label text-[9px] md:text-[10px] font-bold tracking-widest uppercase">
             -{product.promotion}%
           </div>
         )}
+        <div className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out bg-black text-white py-2.5 md:py-3 flex items-center justify-center gap-2">
+          <span className="font-label text-[9px] md:text-[10px] font-bold uppercase tracking-[0.25em]">Voir le produit</span>
+          <StarGlyph variant="outline" className="w-2.5 h-2.5 shrink-0 text-white" />
+        </div>
       </div>
-      <div className={`flex justify-between items-start gap-2 xl:gap-4 ${textWrapClass}`}>
+      <div className="flex justify-between items-start gap-2">
         <div className="min-w-0">
-          <p className={`font-headline font-black uppercase tracking-tighter leading-tight ${big ? 'text-lg md:text-3xl' : 'text-xs md:text-xl'}`}>
+          <p className="font-headline font-black uppercase tracking-tighter leading-tight text-sm md:text-base">
             {product.nom}
           </p>
-          <p className="font-body text-[9px] md:text-xs text-zinc-500 uppercase tracking-widest mt-1 truncate">
-            {subtitle}
+          <p className="font-body text-[9px] md:text-[10px] text-zinc-500 uppercase tracking-widest mt-1 truncate">
+            {product.description?.substring(0, 40) || 'LEVEL UP'}
           </p>
         </div>
-        <PriceBlock product={product} big={big} />
+        <PriceBlock product={product} />
       </div>
     </Link>
-  );
-}
-
-const INFO_ITEMS = [
-  'PAIEMENT À LA LIVRAISON',
-  'LIVRAISON PARTOUT AU BURKINA',
-  'PRODUITS AUTHENTIQUES',
-  'SERVICE CLIENT 226',
-];
-
-function InfoTickerRow() {
-  return (
-    <div className="flex shrink-0 items-center">
-      {INFO_ITEMS.map((item, i) => (
-        <span key={i} className="flex shrink-0 items-center">
-          <span className="whitespace-nowrap px-6 md:px-10 font-label text-[10px] md:text-xs font-bold uppercase tracking-[0.35em] text-black">
-            {item}
-          </span>
-          <StarGlyph variant="outline" className="h-3 w-3 shrink-0 text-black md:h-4 md:w-4" />
-        </span>
-      ))}
-    </div>
   );
 }
 
@@ -129,7 +91,7 @@ export default function Home() {
       .catch(() => setLoading(false));
   }, []);
 
-  const displayProducts = products.slice(0, 4);
+  const displayProducts = products.slice(0, 8);
 
   return (
     <div className="pt-20 pb-24">
@@ -166,62 +128,15 @@ export default function Home() {
             <div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-y-12 md:gap-y-20 gap-x-4 md:gap-x-6 px-4 md:px-6 max-w-7xl mx-auto">
-            {displayProducts[0] && (
-              <ProductCard
-                product={displayProducts[0]}
-                index={0}
-                big
-                subtitle={displayProducts[0].description?.substring(0, 60) || 'Essential'}
-                frameClass="aspect-[4/5] md:aspect-[16/9]"
-                className="col-span-2 md:col-span-8"
-                textWrapClass="md:w-3/4"
-              />
-            )}
-
-            {displayProducts[1] && (
-              <ProductCard
-                product={displayProducts[1]}
-                index={1}
-                subtitle="Essential"
-                frameClass="aspect-[3/4]"
-                className="col-span-1 md:col-span-4 mt-6 md:mt-32"
-              />
-            )}
-
-            {displayProducts[2] && (
-              <ProductCard
-                product={displayProducts[2]}
-                index={2}
-                subtitle="Technical"
-                frameClass="aspect-[3/4]"
-                className="col-span-1 md:col-span-5"
-              />
-            )}
-
-            {displayProducts[3] && (
-              <ProductCard
-                product={displayProducts[3]}
-                index={3}
-                big
-                subtitle={displayProducts[3].description?.substring(0, 60) || 'Essential'}
-                frameClass="aspect-square md:aspect-[4/5]"
-                className="col-span-2 md:col-span-7 mt-2 md:mt-[-100px]"
-                textWrapClass="md:w-3/4 md:ml-auto"
-              />
-            )}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-10 md:gap-x-6 md:gap-y-14 px-4 md:px-6 max-w-7xl mx-auto">
+            {displayProducts.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} />
+            ))}
           </div>
         )}
       </section>
 
-      <section className="border-y border-black bg-white py-3 overflow-hidden" aria-hidden="true">
-        <div className="lu-marquee flex w-max">
-          <InfoTickerRow />
-          <InfoTickerRow />
-        </div>
-      </section>
-
-      <section className="py-20 md:py-28 px-4 md:px-6 flex flex-col items-center text-center bg-surface relative overflow-hidden">
+      <section className="py-20 md:py-28 px-4 md:px-6 flex flex-col items-center text-center bg-surface border-t border-black relative overflow-hidden">
         <div className="flex items-center gap-3 md:gap-4 mb-6">
           <StarGlyph variant="outline" className="w-3 h-3 text-black shrink-0" />
           <span className="font-label text-[10px] md:text-xs tracking-[0.45em] text-zinc-500 uppercase">Stay Informed</span>
@@ -237,7 +152,7 @@ export default function Home() {
             className="bg-transparent border-0 border-b border-black py-4 px-0 font-label tracking-widest focus:ring-0 focus:border-[#E6320F] transition-colors text-center uppercase text-xs outline-none placeholder:text-zinc-300"
           />
           <button
-            className="bg-[#E6320F] text-white font-headline font-bold py-5 tracking-widest hover:bg-black transition-colors duration-300 mt-4 uppercase"
+            className="bg-black text-white font-headline font-bold py-5 tracking-widest hover:bg-[#E6320F] transition-colors duration-300 mt-4 uppercase"
           >
             S'abonner
           </button>
