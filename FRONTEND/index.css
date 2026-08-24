@@ -88,6 +88,19 @@ h1, h2, h3, h4, h5, h6 {
 .lu-outline-text {
   color: transparent;
   -webkit-text-stroke: 0.022em #000;
+  transition: color 0.35s ease;
+}
+
+.lu-outline-text:hover {
+  color: #000;
+}
+
+.lu-ruler {
+  border-bottom: 1px solid #000;
+  background-image: repeating-linear-gradient(90deg, #000 0, #000 1px, transparent 1px 14px);
+  background-size: 100% 8px;
+  background-position: bottom left;
+  background-repeat: no-repeat;
 }
 
 @keyframes lu-rise {
@@ -95,14 +108,31 @@ h1, h2, h3, h4, h5, h6 {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes lu-letter-rise {
+  from { transform: translateY(115%) rotate(5deg); }
+  to { transform: translateY(0) rotate(0deg); }
+}
+
 @keyframes lu-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-@keyframes lu-float-y {
-  0%, 100% { transform: translateY(-5%); }
-  50% { transform: translateY(8%); }
+@keyframes lu-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes lu-arrow-loop {
+  0% { transform: translateY(0.3em); opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: translateY(-0.35em); opacity: 0; }
+}
+
+@keyframes lu-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 .lu-hero-rise {
@@ -110,15 +140,38 @@ h1, h2, h3, h4, h5, h6 {
   animation: lu-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+.lu-letter {
+  animation: lu-letter-rise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+
 .lu-hero-spin {
+  animation: lu-spin 12s linear infinite;
+}
+
+.lu-hero-spin-slow {
+  animation: lu-spin 18s linear infinite;
+}
+
+.lu-hero-spin-ambient {
   animation: lu-spin 90s linear infinite;
 }
 
-.lu-hero-float {
-  animation: lu-float-y 2.6s ease-in-out infinite;
+.lu-hero-spin-reverse {
+  animation: lu-spin-reverse 26s linear infinite;
+}
+
+.lu-arrow-loop {
+  animation: lu-arrow-loop 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.lu-marquee {
+  animation: lu-marquee 32s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lu-hero-rise { animation: none; opacity: 1; }
-  .lu-hero-spin, .lu-hero-float { animation: none; }
+  .lu-letter { animation: none; }
+  .lu-hero-spin, .lu-hero-spin-slow, .lu-hero-spin-ambient,
+  .lu-hero-spin-reverse, .lu-arrow-loop, .lu-marquee { animation: none; }
 }

@@ -22,7 +22,7 @@ export default function Home() {
     <div className="pt-20 pb-24">
       <section className="relative h-[80vh] min-h-[550px] md:min-h-[750px] w-full overflow-hidden bg-surface border-b border-zinc-200 flex flex-col items-center justify-center">
         <HeroLogo />
-        <div className="relative z-20 w-full h-full max-w-7xl mx-auto flex flex-col justify-end items-center px-4 sm:px-6 pb-10 md:pb-16 pointer-events-none">
+        <div className="relative z-20 w-full h-full max-w-7xl mx-auto flex flex-col justify-end items-center px-4 sm:px-6 pb-16 md:pb-20 pointer-events-none">
           <div className="flex flex-col items-center mt-auto w-full pointer-events-auto">
             <Link to="/shop" className="bg-transparent border border-black text-black font-headline font-bold text-[10px] sm:text-xs md:text-sm px-10 sm:px-12 md:px-16 py-3 sm:py-4 md:py-5 tracking-[0.2em] hover:bg-black hover:text-white active:bg-zinc-800 transition-all duration-300 uppercase w-fit backdrop-blur-sm sm:backdrop-blur-[2px]">
               Decouvrir la Boutique
