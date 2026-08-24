@@ -219,10 +219,24 @@ export default function HeroLogo() {
         </p>
 
         <h1 className="relative flex flex-col items-center" aria-label="LEVEL UP">
-          <span className="block overflow-hidden pb-[0.03em] leading-none">
-            {['L', 'E', 'V', 'E', 'L'].map((letter, i) => (
-              <RevealLetter key={i} letter={letter} delay={0.15 + i * 0.08} />
-            ))}
+          <span className="relative block">
+            <span className="block overflow-hidden pb-[0.03em] leading-none">
+              {['L', 'E', 'V', 'E', 'L'].map((letter, i) => (
+                <RevealLetter key={i} letter={letter} delay={0.15 + i * 0.08} />
+              ))}
+            </span>
+            <span
+              className="lu-badge-pop absolute -bottom-3 right-[-10px] z-20 md:-bottom-4 md:right-[-26px]"
+              aria-hidden="true"
+            >
+              <span className="lu-badge-wiggle -rotate-6 bg-[#E6320F] px-2 py-1.5 md:px-3 md:py-2">
+                <span className="block border border-white/90 px-2 py-1 md:px-3 md:py-1.5">
+                  <span className="block whitespace-nowrap font-label text-[9px] font-bold uppercase tracking-[0.28em] text-white md:text-[11px]">
+                    Authentique
+                  </span>
+                </span>
+              </span>
+            </span>
           </span>
 
           <span
@@ -252,13 +266,6 @@ export default function HeroLogo() {
               >
                 <path d="M12 21V4M5 11l7-7 7 7" />
               </svg>
-            </span>
-            <span className="lu-badge-pop absolute -top-4 right-[-16px] z-20 md:-top-6 md:right-[-28px]" aria-hidden="true">
-              <span className="lu-badge-wiggle -rotate-6 bg-[#E6320F] px-2.5 py-1.5 md:px-3.5 md:py-2">
-                <span className="block whitespace-nowrap font-label text-[8px] font-bold uppercase tracking-[0.22em] text-white md:text-[10px]">
-                  New Drop
-                </span>
-              </span>
             </span>
           </span>
         </h1>
