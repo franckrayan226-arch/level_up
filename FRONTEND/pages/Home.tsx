@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchProducts, getImageUrl, type ApiProduct } from '../api';
+import HeroLogo from '../components/HeroLogo';
 
 export default function Home() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
@@ -19,15 +20,9 @@ export default function Home() {
 
   return (
     <div className="pt-20 pb-24">
-      <section className="relative h-[80vh] min-h-[550px] md:min-h-[750px] w-full overflow-hidden bg-[#E2E2E2] flex flex-col items-center justify-center">
-        <div className="absolute inset-0 w-full h-full max-w-7xl mx-auto px-0 md:px-6">
-          <img 
-            src="/hero-image.png" 
-            alt="LEVEL-UP Streetwear Model" 
-            className="w-full h-full object-cover object-[center_10%] md:object-contain md:object-bottom mix-blend-multiply opacity-100"
-          />
-        </div>
-        <div className="relative z-10 w-full h-full max-w-7xl mx-auto flex flex-col justify-end items-center px-4 sm:px-6 pb-10 md:pb-16 pointer-events-none">
+      <section className="relative h-[80vh] min-h-[550px] md:min-h-[750px] w-full overflow-hidden bg-surface border-b border-zinc-200 flex flex-col items-center justify-center">
+        <HeroLogo />
+        <div className="relative z-20 w-full h-full max-w-7xl mx-auto flex flex-col justify-end items-center px-4 sm:px-6 pb-10 md:pb-16 pointer-events-none">
           <div className="flex flex-col items-center mt-auto w-full pointer-events-auto">
             <Link to="/shop" className="bg-transparent border border-black text-black font-headline font-bold text-[10px] sm:text-xs md:text-sm px-10 sm:px-12 md:px-16 py-3 sm:py-4 md:py-5 tracking-[0.2em] hover:bg-black hover:text-white active:bg-zinc-800 transition-all duration-300 uppercase w-fit backdrop-blur-sm sm:backdrop-blur-[2px]">
               Decouvrir la Boutique

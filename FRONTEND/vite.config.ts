@@ -19,8 +19,10 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       host: '0.0.0.0',
       // CORRECTION : proxy pour que les appels /api en dev atteignent le backend
+      // '^/api/' (regex) au lieu de '/api' : sans le slash final, Vite captait
+      // aussi le module FRONTEND /api.ts et le renvoyait au backend -> 500.
       proxy: {
-        '/api': {
+        '^/api/': {
           target: env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8080',
           changeOrigin: true,
         },

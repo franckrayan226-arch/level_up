@@ -83,3 +83,42 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Epilogue', sans-serif;
 }
+
+/* Hero wordmark — LEVEL UP */
+.lu-outline-text {
+  color: transparent;
+  -webkit-text-stroke: 0.022em #000;
+}
+
+@keyframes lu-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lu-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lu-float-y {
+  0%, 100% { transform: translateY(-5%); }
+  50% { transform: translateY(8%); }
+}
+
+.lu-hero-rise {
+  opacity: 0;
+  animation: lu-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.lu-hero-spin {
+  animation: lu-spin 90s linear infinite;
+}
+
+.lu-hero-float {
+  animation: lu-float-y 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lu-hero-rise { animation: none; opacity: 1; }
+  .lu-hero-spin, .lu-hero-float { animation: none; }
+}
