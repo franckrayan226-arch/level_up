@@ -373,12 +373,27 @@ app.get('/admin/', (req, res) => {
 });
 
 // FRONTEND REACT (CATCH-ALL TOUJOURS EN DERNIER)
-app.use(express.static(path.join(__dirname, 'dist')));
+// Assets hashes (contenu immutable) -> cache 1 an.
+// index.html -> JAMAIS cache par le navigateur (evite les pages blanches
+// apres un deploiement : ancien index.html demandant un ancien bundle supprime).
+app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
+  immutable: true,
+  maxAge: '1y',
+}));
+
+app.use(express.static(path.join(__dirname, 'dist'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Route API non trouvee' });
   }
+  res.setHeader('Cache-Control', 'no-cache');
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
