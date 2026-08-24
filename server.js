@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const cloudinary = require('cloudinary').v2;
 
 const app = express();
@@ -237,6 +237,110 @@ app.get('/api/admin/stats', checkAuth, async (req, res) => {
   const promo = await db.collection('produits').countDocuments({ promotion: { $gt: 0 } });
   const rupture = await db.collection('produits').countDocuments({ disponible: false });
   res.json({ total, disponibles: dispo, enPromo: promo, rupture });
+});
+
+// ============================================
+// ANALYTICS VISITEURS (additif — n'affecte aucune route existante)
+// ============================================
+function dateDuJour() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Enregistre une vue de page (appelé par le site à chaque changement de page)
+app.post('/api/analytics/visite', async (req, res) => {
+  const { page, produitId, sid } = req.body || {};
+  if (!sid) return res.status(400).json({ error: 'sid requis' });
+  const r = await db.collection('visites').insertOne({
+    sid: String(sid).slice(0, 64),
+    page: String(page || 'autre').slice(0, 32),
+    produitId: produitId ? String(produitId).slice(0, 64) : null,
+    duree: 0,
+    ts: new Date(),
+    date: dateDuJour(),
+  });
+  res.json({ id: r.insertedId });
+});
+
+// Durée de la visite (envoyée au moment où l'onglet est quitté/masqué)
+app.post('/api/analytics/duree', async (req, res) => {
+  const { id, duree } = req.body || {};
+  if (!id) return res.status(400).json({ error: 'id requis' });
+  try {
+    await db.collection('visites').updateOne(
+      { _id: new ObjectId(String(id)) },
+      { $set: { duree: Math.max(0, Math.min(parseInt(duree) || 0, 7200)) } }
+    );
+  } catch {}
+  res.json({ success: true });
+});
+
+// Statistiques agrégées pour le dashboard (protégé par mot de passe admin)
+app.get('/api/analytics/stats', checkAuth, async (req, res) => {
+  const jours = Math.min(Math.max(parseInt(req.query.jours) || 14, 1), 90);
+  const depuis = new Date(Date.now() - (jours - 1) * 86400000);
+  depuis.setHours(0, 0, 0, 0);
+  const col = db.collection('visites');
+
+  const [totalVisites, sidsUniques, visitesAujourdHui, dureeGlobale, parPage, topProduits, serie] = await Promise.all([
+    col.countDocuments({}),
+    col.distinct('sid').then(a => a.length),
+    col.countDocuments({ date: dateDuJour() }),
+    col.aggregate([{ $group: { _id: null, moyenne: { $avg: '$duree' } } }]).toArray(),
+    col.aggregate([
+      { $group: { _id: '$page', visites: { $sum: 1 }, uniques: { $addToSet: '$sid' } } },
+      { $project: { _id: 0, page: '$_id', visites: 1, uniques: { $size: '$uniques' } } },
+      { $sort: { visites: -1 } },
+    ]).toArray(),
+    col.aggregate([
+      { $match: { produitId: { $ne: null } } },
+      { $group: {
+          _id: '$produitId',
+          visites: { $sum: 1 },
+          uniques: { $addToSet: '$sid' },
+          dureeMoyenne: { $avg: '$duree' },
+      }},
+      { $project: { _id: 0, produitId: '$_id', visites: 1, uniques: { $size: '$uniques' }, dureeMoyenne: { $round: ['$dureeMoyenne', 0] } } },
+      { $sort: { visites: -1 } },
+      { $limit: 10 },
+    ]).toArray(),
+    col.aggregate([
+      { $match: { ts: { $gte: depuis } } },
+      { $group: { _id: '$date', visites: { $sum: 1 }, uniques: { $addToSet: '$sid' } } },
+      { $project: { _id: 0, date: '$_id', visites: 1, uniques: { $size: '$uniques' } } },
+      { $sort: { date: 1 } },
+    ]).toArray(),
+  ]);
+
+  // Remplir les jours sans visite (serie continue pour la courbe)
+  const serieMap = Object.fromEntries(serie.map(s => [s.date, s]));
+  const serieComplete = [];
+  for (let i = 0; i < jours; i++) {
+    const key = new Date(depuis.getTime() + i * 86400000).toISOString().slice(0, 10);
+    serieComplete.push({
+      date: key,
+      visites: serieMap[key]?.visites || 0,
+      uniques: serieMap[key]?.uniques || 0,
+    });
+  }
+
+  // Rattacher les noms aux produits les plus vus
+  const produitIds = topProduits.map(t => t.produitId);
+  const produitsConnus = produitIds.length
+    ? await db.collection('produits').find({ id: { $in: produitIds } }).project({ id: 1, nom: 1 }).toArray()
+    : [];
+  const nomMap = Object.fromEntries(produitsConnus.map(p => [p.id, p.nom]));
+
+  res.json({
+    totaux: {
+      visites: totalVisites,
+      visiteursUniques: sidsUniques,
+      visitesAujourdHui,
+      dureeMoyenne: Math.round(dureeGlobale[0]?.moyenne || 0),
+    },
+    parPage,
+    topProduits: topProduits.map(t => ({ ...t, nom: nomMap[t.produitId] || 'Produit supprime' })),
+    serie: serieComplete,
+  });
 });
 
 app.get('/api/admin/produits', checkAuth, async (req, res) => {

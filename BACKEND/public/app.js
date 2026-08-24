@@ -68,6 +68,7 @@ function showSection(section) {
 
   if (section === 'overview') loadStats();
   if (section === 'produits') loadProduits();
+  if (section === 'analytics') loadAnalytics();
   if (section === 'ajouter') {
     if (!editingProductId) {
       resetForm();
@@ -146,6 +147,138 @@ async function loadStats() {
     console.error('Erreur stats:', e);
     toast('Erreur chargement stats: ' + e.message, 'error');
   }
+}
+
+// ============================================
+// ANALYTICS VISITEURS
+// ============================================
+
+let anJours = 14;
+
+function formatDuree(s) {
+  s = Math.max(0, s || 0);
+  if (s < 60) return s + 's';
+  return Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0');
+}
+
+function fmtDate(iso) {
+  return iso.slice(8, 10) + '/' + iso.slice(5, 7);
+}
+
+async function loadAnalytics(jours) {
+  if (jours) anJours = jours;
+  document.querySelectorAll('.an-btn[data-jours]').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.jours) === anJours);
+  });
+  const label = document.getElementById('an-period-label');
+  if (label) label.textContent = `COMPORTEMENT ACHETEUR — ${anJours} DERNIERS JOURS`;
+
+  try {
+    const s = await api(`/api/analytics/stats?jours=${anJours}`);
+    document.getElementById('an-total').textContent = s.totaux.visites;
+    document.getElementById('an-uniques').textContent = s.totaux.visiteursUniques;
+    document.getElementById('an-aujourdhui').textContent = s.totaux.visitesAujourdHui;
+    document.getElementById('an-duree').textContent = formatDuree(s.totaux.dureeMoyenne);
+    renderChart(s.serie);
+    renderTopProduits(s.topProduits);
+    renderPages(s.parPage, s.totaux.visites);
+  } catch (e) {
+    console.error('Erreur analytics:', e);
+    const chart = document.getElementById('an-chart');
+    if (chart) chart.innerHTML = '<p class="an-empty">Erreur de chargement des statistiques.</p>';
+  }
+}
+
+function renderChart(serie) {
+  const wrap = document.getElementById('an-chart');
+  if (!wrap) return;
+  if (!serie || !serie.length) {
+    wrap.innerHTML = '<p class="an-empty">Aucune donnee sur la periode.</p>';
+    return;
+  }
+  const W = 720, H = 280;
+  const padL = 42, padR = 14, padT = 16, padB = 30;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const maxY = Math.max(...serie.map(d => Math.max(d.visites, d.uniques)), 4);
+  const yMax = Math.ceil(maxY * 1.15);
+  const n = serie.length;
+  const x = i => (n === 1 ? padL + innerW / 2 : padL + (i * innerW) / (n - 1));
+  const y = v => padT + innerH - (v / yMax) * innerH;
+
+  const ptsVisites = serie.map((d, i) => `${x(i).toFixed(1)},${y(d.visites).toFixed(1)}`).join(' ');
+  const ptsUniques = serie.map((d, i) => `${x(i).toFixed(1)},${y(d.uniques).toFixed(1)}`).join(' ');
+
+  let grid = '';
+  for (let g = 0; g <= 4; g++) {
+    const gy = (padT + (innerH * g) / 4).toFixed(1);
+    const val = Math.round(yMax * (1 - g / 4));
+    grid += `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" stroke="#222222" stroke-width="1"/>`;
+    grid += `<text x="${padL - 8}" y="${parseFloat(gy) + 4}" text-anchor="end" class="an-chart-txt">${val}</text>`;
+  }
+
+  let dots = '';
+  serie.forEach((d, i) => {
+    const tip = `${fmtDate(d.date)} — ${d.visites} visites, ${d.uniques} visiteurs uniques`;
+    dots += `<circle cx="${x(i).toFixed(1)}" cy="${y(d.visites).toFixed(1)}" r="3.5" fill="#ffffff"><title>${tip}</title></circle>`;
+    dots += `<circle cx="${x(i).toFixed(1)}" cy="${y(d.uniques).toFixed(1)}" r="2.5" fill="#ef4444"><title>${tip}</title></circle>`;
+  });
+
+  const step = Math.max(1, Math.ceil(n / 7));
+  let xLabels = '';
+  serie.forEach((d, i) => {
+    if (i % step === 0 || i === n - 1) {
+      xLabels += `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" class="an-chart-txt">${fmtDate(d.date)}</text>`;
+    }
+  });
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="an-chart-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Courbe des visites">
+      ${grid}
+      <polyline points="${ptsVisites}" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <polyline points="${ptsUniques}" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5 4" stroke-linejoin="round"/>
+      ${dots}
+      ${xLabels}
+    </svg>`;
+}
+
+function renderTopProduits(list) {
+  const el = document.getElementById('an-top-produits');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = '<p class="an-empty">Aucune visite de produit enregistree pour le moment.</p>';
+    return;
+  }
+  const max = list[0].visites || 1;
+  el.innerHTML = list.map((p, i) => `
+    <div class="an-produit-row">
+      <div class="an-produit-head">
+        <span class="an-rank">${String(i + 1).padStart(2, '0')}</span>
+        <span class="an-produit-nom">${escapeHtml(p.nom)}</span>
+      </div>
+      <div class="an-bar-wrap"><div class="an-bar${i === 0 ? ' an-bar-top' : ''}" style="width:${Math.max(6, Math.round((p.visites / max) * 100))}%"></div></div>
+      <div class="an-produit-stats">
+        <span><strong>${p.visites}</strong> vis.</span>
+        <span><strong>${p.uniques}</strong> uniq.</span>
+        <span><strong>${formatDuree(p.dureeMoyenne)}</strong> moy.</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderPages(list, total) {
+  const tbody = document.getElementById('an-pages-tbody');
+  if (!tbody) return;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="an-empty">Aucune donnee pour le moment.</td></tr>';
+    return;
+  }
+  const labels = { accueil: 'ACCUEIL', boutique: 'BOUTIQUE', produit: 'FICHE PRODUIT', commande: 'COMMANDE', profil: 'PROFIL', autre: 'AUTRE' };
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td>${labels[p.page] || escapeHtml(p.page)}</td>
+      <td class="an-mono">${p.visites}</td>
+      <td class="an-mono">${p.uniques}</td>
+      <td class="an-mono">${total ? Math.round((p.visites / total) * 100) : 0}%</td>
+    </tr>`).join('');
 }
 
 function renderRecents(produits) {

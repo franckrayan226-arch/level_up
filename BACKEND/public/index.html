@@ -30,6 +30,7 @@
         <button type="button" class="nav-link active" data-section="overview" onclick="showSection('overview')">OVERVIEW</button>
         <button type="button" class="nav-link" data-section="produits" onclick="showSection('produits')">PRODUITS</button>
         <button type="button" class="nav-link" data-section="ajouter" onclick="showSection('ajouter')">AJOUTER</button>
+        <button type="button" class="nav-link nav-analytics" data-section="analytics" onclick="showSection('analytics')">ANALYTICS</button>
         <a href="/" target="_blank" class="nav-link nav-external">VOIR LE SITE</a>
         <button type="button" class="nav-link nav-logout" onclick="logout()">QUITTER</button>
       </nav>
@@ -95,6 +96,75 @@
           </thead>
           <tbody id="produits-tbody"></tbody>
         </table>
+      </div>
+    </section>
+
+    <section id="section-analytics" class="dash-section hidden">
+      <div class="section-header">
+        <h1 class="section-title">ANALYTICS</h1>
+        <div class="section-line"></div>
+      </div>
+
+      <div class="an-toolbar">
+        <span class="an-toolbar-label" id="an-period-label">COMPORTEMENT ACHETEUR — 14 DERNIERS JOURS</span>
+        <div class="an-toolbar-btns">
+          <button type="button" class="an-btn" data-jours="7" onclick="loadAnalytics(7)">7J</button>
+          <button type="button" class="an-btn active" data-jours="14" onclick="loadAnalytics(14)">14J</button>
+          <button type="button" class="an-btn" data-jours="30" onclick="loadAnalytics(30)">30J</button>
+          <button type="button" class="an-btn an-btn-refresh" onclick="loadAnalytics()" title="Rafraichir">↻</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="an-total">0</div>
+          <div class="stat-label">VISITES PAGES</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-number" id="an-uniques">0</div>
+          <div class="stat-label">VISITEURS UNIQUES</div>
+        </div>
+        <div class="stat-card stat-yellow">
+          <div class="stat-number" id="an-aujourdhui">0</div>
+          <div class="stat-label">VISITES AUJOURD'HUI</div>
+        </div>
+        <div class="stat-card stat-red">
+          <div class="stat-number" id="an-duree">0s</div>
+          <div class="stat-label">DURÉE MOYENNE / PAGE</div>
+        </div>
+      </div>
+
+      <div class="an-panel">
+        <div class="an-panel-head">
+          <h2 class="subsection-title">FRÉQUENTATION — VISITES &amp; VISITEURS UNIQUES</h2>
+          <div class="an-legend">
+            <span class="an-legend-item"><i class="an-dot" style="background:#ffffff"></i>VISITES</span>
+            <span class="an-legend-item"><i class="an-dot" style="background:#ef4444"></i>UNIQUES</span>
+          </div>
+        </div>
+        <div class="an-chart-wrap" id="an-chart">
+          <p class="an-empty">Chargement...</p>
+        </div>
+      </div>
+
+      <div class="an-columns">
+        <div class="an-panel">
+          <h2 class="subsection-title">PRODUITS LES PLUS VUS</h2>
+          <p class="an-panel-sub">Classement par vues — visiteurs uniques et temps moyen passé sur chaque fiche.</p>
+          <div id="an-top-produits"><p class="an-empty">Aucune donnee pour le moment.</p></div>
+        </div>
+        <div class="an-panel">
+          <h2 class="subsection-title">RÉPARTITION PAR PAGE</h2>
+          <p class="an-panel-sub">Où vont vos visiteurs avant d'acheter.</p>
+          <table class="an-table">
+            <thead>
+              <tr><th>PAGE</th><th>VISITES</th><th>UNIQUES</th><th>PART</th></tr>
+            </thead>
+            <tbody id="an-pages-tbody">
+              <tr><td colspan="4" class="an-empty">Aucune donnee pour le moment.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
