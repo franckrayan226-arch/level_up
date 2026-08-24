@@ -45,7 +45,7 @@ function StarGlyph({
   );
 }
 
-const WORD_SIZE = 'clamp(3.75rem, 19vw, 12rem)';
+const WORD_SIZE = 'clamp(3.25rem, 17.5vw, 12rem)';
 const BG_WORD_SIZE = 'clamp(6rem, 26vw, 20rem)';
 
 const TICKER_ITEMS = [
@@ -195,7 +195,7 @@ export default function HeroLogo() {
       />
 
       <div
-        className="absolute left-1/2 top-[12%] w-[130vw] -translate-x-1/2 -rotate-2 overflow-hidden border-y-2 border-black bg-black py-2 md:py-3"
+        className="absolute left-1/2 bottom-[7.25rem] top-auto w-[130vw] -translate-x-1/2 -rotate-2 overflow-hidden border-y-2 border-black bg-black py-1.5 md:bottom-auto md:top-[12%] md:py-3"
         aria-hidden="true"
       >
         <div className="lu-marquee-band flex w-max">
@@ -212,7 +212,7 @@ export default function HeroLogo() {
         }}
       >
         <p
-          className="lu-hero-rise mb-6 font-label text-[9px] uppercase tracking-[0.45em] text-zinc-500 md:mb-8 md:text-[11px]"
+          className="lu-hero-rise mb-4 font-label text-[9px] uppercase tracking-[0.45em] text-zinc-500 md:mb-8 md:text-[11px]"
           style={{ animationDelay: '0.1s' }}
         >
           High-End Streetwear — Ouagadougou 226
@@ -250,7 +250,7 @@ export default function HeroLogo() {
           </span>
 
           <span
-            className="lu-hero-rise my-4 flex w-full items-center justify-center gap-4 md:my-6 md:gap-6"
+            className="lu-hero-rise my-3 flex w-full items-center justify-center gap-4 md:my-6 md:gap-6"
             style={{ animationDelay: '0.5s' }}
             aria-hidden="true"
           >
