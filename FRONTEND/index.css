@@ -156,6 +156,24 @@ h1, h2, h3, h4, h5, h6 {
   87.5% { transform: translate(-7%, -4%); }
 }
 
+@keyframes lu-badge-pop {
+  from { opacity: 0; transform: scale(0) rotate(-24deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes lu-badge-wiggle {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(4deg); }
+}
+
+.lu-badge-pop {
+  animation: lu-badge-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 1.2s both;
+}
+
+.lu-badge-wiggle {
+  animation: lu-badge-wiggle 3.4s ease-in-out 1.9s infinite;
+}
+
 .lu-hero-rise {
   opacity: 0;
   animation: lu-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -226,5 +244,5 @@ h1, h2, h3, h4, h5, h6 {
   .lu-hero-spin, .lu-hero-spin-slow, .lu-hero-spin-ambient,
   .lu-hero-spin-reverse, .lu-arrow-loop, .lu-marquee,
   .lu-marquee-band, .lu-marquee-bg, .lu-marquee-bg-rev,
-  .lu-wave, .lu-grain { animation: none; }
+  .lu-wave, .lu-grain, .lu-badge-pop, .lu-badge-wiggle { animation: none; }
 }

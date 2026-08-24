@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <div className="pt-20 pb-24">
-      <section className="relative h-[80vh] min-h-[550px] md:min-h-[750px] w-full overflow-hidden bg-surface border-b border-zinc-200 flex flex-col items-center justify-center">
+      <section className="relative h-[70vh] min-h-[480px] md:h-[80vh] md:min-h-[750px] w-full overflow-hidden bg-surface border-b border-zinc-200 flex flex-col items-center justify-center">
         <HeroLogo />
         <div className="relative z-20 w-full h-full max-w-7xl mx-auto flex flex-col justify-end items-center px-4 sm:px-6 pb-16 md:pb-20 pointer-events-none">
           <div className="flex flex-col items-center mt-auto w-full pointer-events-auto">
